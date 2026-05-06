@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'alzaem2002@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+    function isValidClass(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && data.gradeLevel is string && data.gradeLevel.size() > 0
+          && (data.homeroomTeacher == null || data.homeroomTeacher is string);
+    }
+
+    function isValidStudent(data) {
+      return data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 200
+          && isValidId(data.classId)
+          && data.className is string
+          && data.guardianName is string
+          && data.guardianPhone is string
+          && data.isActive is bool;
+    }
+
+    function isValidSession(data) {
+      return (data.date is timestamp || data.date == request.time)
+          && data.period is int && data.period >= 1 && data.period <= 10
+          && data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100
+          && isValidId(data.classId)
+          && data.teacherEmail is string;
+    }
+
+    function isValidLog(data) {
+      return isValidId(data.studentId)
+          && isValidId(data.sessionId)
+          && isValidId(data.classId)
+          && data.teacherEmail is string
+          && data.status in ['حاضر', 'غائب', 'متأخر', 'بعذر']
+          && (data.timestamp is timestamp || data.timestamp == request.time);
+    }
+
+    // --- Rules ---
+
+    match /classes/{classId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() && isValidClass(incoming());
+    }
+
+    match /students/{studentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() && isValidStudent(incoming());
+    }
+
+    match /sessions/{sessionId} {
+      allow read, list: if isSignedIn() && (isAdmin() || resource.data.teacherEmail == request.auth.token.email);
+      allow create: if isSignedIn() && (isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidSession(incoming());
+      allow update: if isSignedIn() && (isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidSession(incoming()) && (isAdmin() || (incoming().teacherEmail == existing().teacherEmail));
+      allow delete: if isAdmin();
+    }
+
+    match /attendanceLogs/{logId} {
+      allow read, list: if isSignedIn() && (isAdmin() || resource.data.teacherEmail == request.auth.token.email);
+      allow create: if isSignedIn() && (isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidLog(incoming());
+      allow update: if isSignedIn() && (isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidLog(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}

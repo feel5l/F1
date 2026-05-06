@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "Class": {
+      "title": "Class",
+      "description": "A school class",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "gradeLevel": { "type": "string" },
+        "homeroomTeacher": { "type": "string" }
+      },
+      "required": ["name", "gradeLevel"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "A student in the school",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "classId": { "type": "string" },
+        "className": { "type": "string" },
+        "guardianName": { "type": "string" },
+        "guardianPhone": { "type": "string" },
+        "parentEmail": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["fullName", "classId", "className", "guardianName", "guardianPhone", "isActive"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "An attendance session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "period": { "type": "number" },
+        "subject": { "type": "string" },
+        "classId": { "type": "string" },
+        "teacherEmail": { "type": "string" }
+      },
+      "required": ["date", "period", "subject", "classId", "teacherEmail"]
+    },
+    "AttendanceLog": {
+      "title": "AttendanceLog",
+      "description": "Attendance record for a student in a session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "classId": { "type": "string" },
+        "teacherEmail": { "type": "string" },
+        "status": { "type": "string", "enum": ["حاضر", "غائب", "متأخر", "بعذر"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "note": { "type": "string" }
+      },
+      "required": ["studentId", "sessionId", "classId", "teacherEmail", "status", "timestamp"]
+    }
+  },
+  "firestore": {
+    "classes": {
+      "schema": "Class",
+      "description": "Collection of school classes"
+    },
+    "students": {
+      "schema": "Student",
+      "description": "Collection of students"
+    },
+    "sessions": {
+      "schema": "Session",
+      "description": "Collection of attendance sessions"
+    },
+    "attendanceLogs": {
+      "schema": "AttendanceLog",
+      "description": "Collection of attendance records"
+    }
+  }
+}
