@@ -11,8 +11,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getAppRole() {
+      // Look up role from a 'roles' collection where doc ID is the user's email
+      // This is more efficient for rules than querying staff with unknown IDs
+      return get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.role;
+    }
+
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'alzaem2002@gmail.com' || request.auth.token.email == 'zayd12345@ghiabi.com');
+      return isSignedIn() && (
+        request.auth.token.email == 'alzaem2002@gmail.com' || 
+        request.auth.token.email == 'zayd12345@ghiabi.com' ||
+        getAppRole() == 'ADMIN'
+      );
+    }
+
+    function isTeacher() {
+      return isSignedIn() && (getAppRole() == 'TEACHER' || getAppRole() == 'TEACHER_LEADER' || isAdmin());
+    }
+
+    function isTeacherLeader() {
+      return isSignedIn() && (getAppRole() == 'TEACHER_LEADER' || isAdmin());
+    }
+
+    function isAttendanceOfficer() {
+      return isSignedIn() && (getAppRole() == 'ATTENDANCE_OFFICER' || isAdmin());
+    }
+
+    function isSupervisor() {
+      return isSignedIn() && (getAppRole() == 'SUPERVISOR' || isAdmin());
     }
 
     function isValidId(id) {
@@ -66,7 +92,8 @@ service cloud.firestore {
           && data.nationalId is string && data.nationalId.size() > 0
           && data.phone is string
           && data.role is string
-          && data.email is string;
+          && data.email is string
+          && (!('appRole' in data) || data.appRole in ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR']);
     }
 
     // --- Rules ---
@@ -78,26 +105,31 @@ service cloud.firestore {
 
     match /students/{studentId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin() && isValidStudent(incoming());
+      allow write: if (isAdmin() || isTeacherLeader()) && isValidStudent(incoming());
     }
 
     match /sessions/{sessionId} {
-      allow read, list: if isSignedIn() && (isAdmin() || resource.data.teacherEmail == request.auth.token.email);
-      allow create: if isSignedIn() && (isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidSession(incoming());
-      allow update: if isSignedIn() && (isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidSession(incoming()) && (isAdmin() || (incoming().teacherEmail == existing().teacherEmail));
+      allow read, list: if isSignedIn() && (isSupervisor() || isAttendanceOfficer() || isTeacherLeader() || resource.data.teacherEmail == request.auth.token.email);
+      allow create: if isSignedIn() && (isAttendanceOfficer() || isTeacherLeader() || isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidSession(incoming());
+      allow update: if isSignedIn() && (isAttendanceOfficer() || isTeacherLeader() || isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidSession(incoming()) && (isAdmin() || (incoming().teacherEmail == existing().teacherEmail));
       allow delete: if isAdmin();
     }
 
     match /attendanceLogs/{logId} {
-      allow read, list: if isSignedIn() && (isAdmin() || resource.data.teacherEmail == request.auth.token.email);
-      allow create: if isSignedIn() && (isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidLog(incoming());
-      allow update: if isSignedIn() && (isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidLog(incoming());
+      allow read, list: if isSignedIn() && (isSupervisor() || isAttendanceOfficer() || isTeacherLeader() || resource.data.teacherEmail == request.auth.token.email);
+      allow create: if isSignedIn() && (isAttendanceOfficer() || isTeacherLeader() || isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidLog(incoming());
+      allow update: if isSignedIn() && (isAttendanceOfficer() || isTeacherLeader() || isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidLog(incoming());
       allow delete: if isAdmin();
     }
 
     match /staff/{staffId} {
       allow read: if isSignedIn();
       allow write: if isAdmin() && isValidStaff(incoming());
+    }
+
+    match /roles/{roleEmail} {
+      allow read: if isSignedIn() && (request.auth.token.email == roleEmail || isAdmin());
+      allow write: if isAdmin();
     }
   }
 }

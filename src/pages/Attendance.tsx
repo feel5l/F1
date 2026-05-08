@@ -14,7 +14,7 @@ import { Class, Student, AttendanceStatus } from '../types';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, staffMember } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [students, setStudents] = useState<Student[]>([]);
@@ -27,7 +27,11 @@ export default function Attendance() {
     const fetchClasses = async () => {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
-      if (isAdmin) {
+      
+      const role = staffMember?.appRole;
+      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
+      
+      if (canSeeAll) {
         setClasses(list);
       } else {
         setClasses(list.filter(c => c.teacherEmail === user?.email));

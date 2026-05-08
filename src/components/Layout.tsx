@@ -20,7 +20,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, staffMember } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,16 +30,31 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, adminOnly: false },
-    { name: 'إدارة الطلاب', path: '/students', icon: Users, adminOnly: true },
-    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, adminOnly: false },
-    { name: 'إدارة الفصول', path: '/classes', icon: School, adminOnly: true },
-    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, adminOnly: false },
-    { name: 'سجل الغياب', path: '/logs', icon: History, adminOnly: true },
-    { name: 'التقارير', path: '/reports', icon: BarChart3, adminOnly: isAdmin },
+    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
+    { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
+    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
+    { name: 'إدارة الفصول', path: '/classes', icon: School, roles: ['ADMIN'] },
+    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'] },
+    { name: 'سجل الغياب', path: '/logs', icon: History, roles: ['ADMIN', 'ATTENDANCE_OFFICER', 'TEACHER_LEADER'] },
+    { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
   ];
 
-  const visibleNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
+  const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+
+  const visibleNavItems = navItems.filter(item => 
+    item.roles.includes(currentRole as any)
+  );
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'ADMIN': return 'مدير نظام';
+      case 'TEACHER': return 'معلم';
+      case 'TEACHER_LEADER': return 'رائد نشاط / رئيس قسم';
+      case 'ATTENDANCE_OFFICER': return 'مسؤول غياب';
+      case 'SUPERVISOR': return 'مشرف';
+      default: return 'موظف';
+    }
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4 px-3">
@@ -70,7 +85,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="mt-auto px-4 py-2 border-t">
         <div className="mb-4">
           <p className="text-sm font-medium truncate">{user?.email}</p>
-          <p className="text-xs text-muted-foreground">{isAdmin ? 'مدير النظام' : 'معلم'}</p>
+          <p className="text-xs text-muted-foreground">{getRoleLabel(currentRole)}</p>
         </div>
         <Button
           variant="outline"

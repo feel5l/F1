@@ -37,13 +37,21 @@ export interface AttendanceLog {
   note?: string;
 }
 
+export type AppRole = "ADMIN" | "TEACHER" | "TEACHER_LEADER" | "ATTENDANCE_OFFICER" | "SUPERVISOR";
+
+export interface Permission {
+  action: "read" | "write" | "delete" | "manage_staff" | "manage_students" | "view_reports";
+  resource: "attendance" | "students" | "classes" | "staff" | "reports";
+}
+
 export interface StaffMember {
   id?: string;
   fullName: string;
   nationalId: string;
   jobNumber?: string;
   phone: string;
-  role: string;
+  role: string; // Keep for display/backwards compat
+  appRole?: AppRole; // New structured role
   specialization: string;
   email: string;
 }
