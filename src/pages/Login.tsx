@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,24 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { School } from 'lucide-react';
+import { School, KeyRound } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,6 +40,25 @@ export default function Login() {
       toast.error('خطأ في تسجيل الدخول: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast.error('يرجى إدخال البريد الإلكتروني');
+      return;
+    }
+    
+    setResetLoading(true);
+    try {
+      const fullEmail = resetEmail.includes('@') ? resetEmail : `${resetEmail}@ghiabi.com`;
+      await sendPasswordResetEmail(auth, fullEmail);
+      toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+      setIsResetOpen(false);
+    } catch (error: any) {
+      toast.error('حدث خطأ: ' + error.message);
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -56,7 +87,45 @@ export default function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+                  <DialogTrigger render={
+                    <Button variant="link" className="px-0 font-normal text-xs h-auto underline">
+                      نسيت كلمة المرور؟
+                    </Button>
+                  } />
+                  <DialogContent className="sm:max-w-[425px]" dir="rtl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <KeyRound className="h-5 w-5" />
+                        إعادة تعيين كلمة المرور
+                      </DialogTitle>
+                      <DialogDescription>
+                        أدخل بريدك الإلكتروني لنرسل لك رابط إعادة تعيين كلمة المرور.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor="resetEmail">البريد الإلكتروني</Label>
+                      <Input
+                        id="resetEmail"
+                        type="email"
+                        placeholder="example@ghiabi.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        className="mt-2"
+                        dir="ltr"
+                      />
+                    </div>
+                    <DialogFooter className="gap-2">
+                      <Button variant="outline" onClick={() => setIsResetOpen(false)}>إلغاء</Button>
+                      <Button onClick={handleResetPassword} disabled={resetLoading}>
+                        {resetLoading ? 'جاري الإرسال...' : 'إرسال الرابط'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <Input
                 id="password"
                 type="password"

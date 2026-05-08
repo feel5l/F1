@@ -9,6 +9,9 @@ import { Input } from '@/components/ui/input';
 import { AttendanceLog, Session, Student, Class } from '../types';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -39,9 +42,6 @@ export default function Logs() {
         setLogs(logsData);
 
         // Fetch related data
-        const studentIds = Array.from(new Set(logsData.map(l => l.studentId)));
-        const sessionIds = Array.from(new Set(logsData.map(l => l.sessionId)));
-
         const studentDocs = await getDocs(collection(db, 'students'));
         const sessionDocs = await getDocs(collection(db, 'sessions'));
         const classDocs = await getDocs(collection(db, 'classes'));
@@ -65,7 +65,23 @@ export default function Logs() {
       }
     };
     fetchLogs();
-  }, []);
+  }, [user?.email, isAdmin]);
+
+  const sendWhatsAppNotification = (log: AttendanceLog, student?: Student) => {
+    if (!student?.guardianPhone) {
+      toast.error('رقم ولي الأمر غير متوفر لهذا الطالب');
+      return;
+    }
+
+    const date = log.timestamp instanceof Timestamp ? log.timestamp.toDate() : new Date();
+    const formattedDate = format(date, 'PPP', { locale: ar });
+    const message = `السلام عليكم، نود إحاطتكم بظهور ابنكم/ابنتكم ${student.fullName} غائباً (أو متأخراً) عن مدرسة زيد بن ثابت اليوم ${formattedDate}. نرجو تزويدنا بالعذر. شكراً لكم.`;
+    
+    // Clean phone number (keep only digits)
+    const cleanPhone = student.guardianPhone.replace(/[^0-9]/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -95,13 +111,14 @@ export default function Logs() {
                   <TableHead>الفصل</TableHead>
                   <TableHead>المادة</TableHead>
                   <TableHead>الحالة</TableHead>
+                  <TableHead className="text-center w-20">إجراء</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-10">جاري التحميل...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-10">جاري التحميل...</TableCell></TableRow>
                 ) : logs.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-10">لا توجد سجلات بعد</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-10">لا توجد سجلات بعد</TableCell></TableRow>
                 ) : logs.map((log) => {
                   const student = students[log.studentId];
                   const session = sessions[log.sessionId];
@@ -117,6 +134,17 @@ export default function Logs() {
                       <TableCell>{cls?.name || '-'}</TableCell>
                       <TableCell>{session?.subject || '-'}</TableCell>
                       <TableCell>{getStatusBadge(log.status)}</TableCell>
+                      <TableCell className="text-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          disabled={!student?.guardianPhone}
+                          onClick={() => sendWhatsAppNotification(log, student)}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })}

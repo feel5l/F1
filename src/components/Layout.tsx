@@ -113,11 +113,11 @@ export default function Layout({ children }: LayoutProps) {
           <span className="font-bold">غيابي</span>
         </div>
         <Sheet>
-          <SheetTrigger asChild>
+          <SheetTrigger render={
             <Button variant="ghost" size="icon">
               <Menu className="w-6 h-6" />
             </Button>
-          </SheetTrigger>
+          } />
           <SheetContent side="right" className="p-0 w-64">
             <SidebarContent />
           </SheetContent>
