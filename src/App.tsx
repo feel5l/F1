@@ -9,6 +9,7 @@ import Students from './pages/Students';
 import Classes from './pages/Classes';
 import Logs from './pages/Logs';
 import Reports from './pages/Reports';
+import Staff from './pages/Staff';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/students" element={<Students />} />
                 <Route path="/classes" element={<Classes />} />
+                <Route path="/staff" element={<Staff />} />
                 <Route path="/logs" element={<Logs />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="*" element={<Navigate to="/" />} />

@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'alzaem2002@gmail.com';
+      return isSignedIn() && (request.auth.token.email == 'alzaem2002@gmail.com' || request.auth.token.email == 'zayd12345@ghiabi.com');
     }
 
     function isValidId(id) {
@@ -31,7 +31,8 @@ service cloud.firestore {
     function isValidClass(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100
           && data.gradeLevel is string && data.gradeLevel.size() > 0
-          && (data.homeroomTeacher == null || data.homeroomTeacher is string);
+          && (!('homeroomTeacher' in data) || data.homeroomTeacher is string)
+          && (!('teacherEmail' in data) || data.teacherEmail is string);
     }
 
     function isValidStudent(data) {
@@ -60,6 +61,14 @@ service cloud.firestore {
           && (data.timestamp is timestamp || data.timestamp == request.time);
     }
 
+    function isValidStaff(data) {
+      return data.fullName is string && data.fullName.size() > 0
+          && data.nationalId is string && data.nationalId.size() > 0
+          && data.phone is string
+          && data.role is string
+          && data.email is string;
+    }
+
     // --- Rules ---
 
     match /classes/{classId} {
@@ -84,6 +93,11 @@ service cloud.firestore {
       allow create: if isSignedIn() && (isAdmin() || incoming().teacherEmail == request.auth.token.email) && isValidLog(incoming());
       allow update: if isSignedIn() && (isAdmin() || existing().teacherEmail == request.auth.token.email) && isValidLog(incoming());
       allow delete: if isAdmin();
+    }
+
+    match /staff/{staffId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() && isValidStaff(incoming());
     }
   }
 }

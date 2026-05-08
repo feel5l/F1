@@ -59,13 +59,18 @@ export default function Reports() {
       try {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
-        setClasses(classList);
+        
+        if (isAdmin) {
+          setClasses(classList);
+        } else {
+          setClasses(classList.filter(c => c.teacherEmail === user?.email));
+        }
       } catch (err) {
         console.error(err);
       }
     };
-    fetchInitialData();
-  }, []);
+    if (user) fetchInitialData();
+  }, [user, isAdmin]);
 
   useEffect(() => {
     if (selectedClass === 'all') {
@@ -139,6 +144,13 @@ export default function Reports() {
 
   useEffect(() => {
     fetchLogs();
+  }, [selectedClass, selectedStudent, dateRange]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, 5 * 60 * 1000); // 5 minutes refresh
+    return () => clearInterval(interval);
   }, [selectedClass, selectedStudent, dateRange]);
 
   // Chart Data: Trends by Date

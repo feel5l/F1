@@ -25,8 +25,22 @@ export default function Dashboard() {
         const todayTS = Timestamp.fromDate(today);
 
         // 1. Total Students
-        const studentsSnap = await getDocs(collection(db, 'students'));
-        const totalStudents = studentsSnap.size;
+        let totalStudents = 0;
+        if (isAdmin) {
+          const studentsSnap = await getDocs(collection(db, 'students'));
+          totalStudents = studentsSnap.size;
+        } else {
+          // Get classes assigned to this teacher
+          const classesSnap = await getDocs(query(collection(db, 'classes'), where('teacherEmail', '==', user?.email)));
+          const classIds = classesSnap.docs.map(doc => doc.id);
+          
+          if (classIds.length > 0) {
+            const studentsSnap = await getDocs(query(collection(db, 'students'), where('classId', 'in', classIds)));
+            totalStudents = studentsSnap.size;
+          } else {
+            totalStudents = 0;
+          }
+        }
 
         // 2. Logs for today
         let queryConstraints = [where('timestamp', '>=', todayTS)];

@@ -8,7 +8,8 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "gradeLevel": { "type": "string" },
-        "homeroomTeacher": { "type": "string" }
+        "homeroomTeacher": { "type": "string" },
+        "teacherEmail": { "type": "string" }
       },
       "required": ["name", "gradeLevel"]
     },
@@ -57,6 +58,22 @@
         "note": { "type": "string" }
       },
       "required": ["studentId", "sessionId", "classId", "teacherEmail", "status", "timestamp"]
+    },
+    "StaffMember": {
+      "title": "StaffMember",
+      "description": "A member of the school staff or faculty",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "nationalId": { "type": "string" },
+        "jobNumber": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string" },
+        "specialization": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["fullName", "nationalId", "phone", "role", "email"]
     }
   },
   "firestore": {
@@ -75,6 +92,10 @@
     "attendanceLogs": {
       "schema": "AttendanceLog",
       "description": "Collection of attendance records"
+    },
+    "staff": {
+      "schema": "StaffMember",
+      "description": "Collection of school staff members"
     }
   }
 }

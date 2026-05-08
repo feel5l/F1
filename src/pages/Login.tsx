@@ -19,7 +19,9 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Handle both email and username (zayd12345)
+      const loginIdentifier = email.includes('@') ? email : `${email}@ghiabi.com`;
+      await signInWithEmailAndPassword(auth, loginIdentifier, password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
@@ -42,11 +44,11 @@ export default function Login() {
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">اسم المستخدم أو البريد الإلكتروني</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="teacher@example.com"
+                type="text"
+                placeholder="zayd12345"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

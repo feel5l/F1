@@ -3,6 +3,7 @@ export interface Class {
   name: string;
   gradeLevel: string;
   homeroomTeacher?: string;
+  teacherEmail?: string;
 }
 
 export interface Student {
@@ -34,4 +35,15 @@ export interface AttendanceLog {
   status: AttendanceStatus;
   timestamp: any; // Firestore Timestamp
   note?: string;
+}
+
+export interface StaffMember {
+  id?: string;
+  fullName: string;
+  nationalId: string;
+  jobNumber?: string;
+  phone: string;
+  role: string;
+  specialization: string;
+  email: string;
 }

@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const isAdmin = user?.email === 'alzaem2002@gmail.com';
+  const isAdmin = user?.email === 'alzaem2002@gmail.com' || user?.email === 'zayd12345@ghiabi.com';
 
   return (
     <AuthContext.Provider value={{ user, loading, isAdmin }}>

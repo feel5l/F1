@@ -32,6 +32,7 @@ export default function Layout({ children }: LayoutProps) {
   const navItems = [
     { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, adminOnly: false },
     { name: 'إدارة الطلاب', path: '/students', icon: Users, adminOnly: true },
+    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, adminOnly: false },
     { name: 'إدارة الفصول', path: '/classes', icon: School, adminOnly: true },
     { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, adminOnly: false },
     { name: 'سجل الغياب', path: '/logs', icon: History, adminOnly: true },
