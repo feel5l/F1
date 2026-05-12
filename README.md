@@ -50,10 +50,9 @@
    ```
 
 3. إعداد البيئة (Environment Variables):
-   سيقوم النظام بإنشاء ملف `firebase-applet-config.json` عند الإعداد، ولكن للتشغيل المحلي يمكنك إضافة مفتاح Gemini في ملف `.env`:
-   ```env
-   GEMINI_API_KEY=your_api_key_here
-   ```
+   لا توجد متغيرات بيئة مطلوبة لتشغيل الواجهة الأمامية حالياً. إعدادات Firebase الخاصة بالواجهة موجودة في `firebase-applet-config.json`.
+   
+   **تنبيه أمني**: لا تضع مفاتيح API (مثل Gemini) داخل الواجهة الأمامية لأنّها ستُدمج في ملفات البناء (`dist/`) وتصبح مرئية للمستخدمين.
 
 ### التشغيل (Development)
 ```bash
@@ -74,8 +73,7 @@ npm test
 2. سيقوم Netlify تلقائياً بالتعرف على ملف `netlify.toml` واستخدام الإعدادات التالية:
    - **Build Command**: `npm run build`
    - **Publish Directory**: `dist`
-3. **تنبيه هام**: يجب إضافة متغيرات البيئة (Environment Variables) في لوحة تحكم Netlify:
-   - `GEMINI_API_KEY`: مفتاح Gemini الخاص بك.
+3. لا يوجد حالياً متغيرات بيئة مطلوبة للنشر على Netlify.
 
 ---
 
