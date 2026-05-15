@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
 
 interface AuthContextType {
@@ -39,7 +40,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Fetch from roles collection (Master Source for Rules)
           const roleRef = doc(db, 'roles', authUser.email);
           const roleSnap = await getDoc(roleRef);
-          const roleData = roleSnap.exists() ? roleSnap.data() : null;
+          let roleData = roleSnap.exists() ? roleSnap.data() : null;
+          if (!roleData?.role && authUser.email === 'alzaem3000@gmail.com') {
+            await setDoc(roleRef, { role: 'ADMIN' as AppRole });
+            toast.success('تم تفعيل صلاحيات المدير بنجاح في قاعدة البيانات');
+            roleData = { role: 'ADMIN' };
+          }
 
           if (!querySnapshot.empty) {
             const data = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember;
@@ -73,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const isAdmin = staffMember?.appRole === 'ADMIN' || user?.email === 'alzaem2002@gmail.com' || user?.email === 'zayd12345@ghiabi.com';
+  const isAdmin = staffMember?.appRole === 'ADMIN';
   const isTeacher = staffMember?.appRole === 'TEACHER' || staffMember?.appRole === 'TEACHER_LEADER';
   const isSupervisor = staffMember?.appRole === 'SUPERVISOR';
 

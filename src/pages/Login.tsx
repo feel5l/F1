@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import { GoogleAuthProvider, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,37 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (!result?.user) return;
+        toast.success('تم تسجيل الدخول بنجاح');
+        navigate('/');
+      })
+      .catch((error: any) => {
+        toast.error('خطأ في تسجيل الدخول: ' + error.message);
+      });
+  }, [navigate]);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast.success('تم تسجيل الدخول بنجاح');
+      navigate('/');
+    } catch (error: any) {
+      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+        const provider = new GoogleAuthProvider();
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+      toast.error('خطأ في تسجيل الدخول: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +103,11 @@ export default function Login() {
           <CardTitle className="text-2xl font-bold">غيابي - Ghiyabi</CardTitle>
           <CardDescription>مدرسة زيد بن ثابت الابتدائية</CardDescription>
         </CardHeader>
+        <div className="px-6">
+          <Button className="w-full" variant="outline" onClick={handleGoogleLogin} disabled={loading}>
+            الدخول السريع عبر حساب جوجل
+          </Button>
+        </div>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             <div className="space-y-2">

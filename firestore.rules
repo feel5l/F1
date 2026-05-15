@@ -12,17 +12,17 @@ service cloud.firestore {
     }
 
     function getAppRole() {
-      // Look up role from a 'roles' collection where doc ID is the user's email
-      // This is more efficient for rules than querying staff with unknown IDs
-      return get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.role;
+      return exists(/databases/$(database)/documents/roles/$(request.auth.token.email))
+        ? get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.role
+        : null;
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'alzaem2002@gmail.com' || 
-        request.auth.token.email == 'zayd12345@ghiabi.com' ||
-        getAppRole() == 'ADMIN'
-      );
+      return isSignedIn() && getAppRole() == 'ADMIN';
+    }
+
+    function isBootstrapAdminEmail() {
+      return isSignedIn() && request.auth.token.email == 'alzaem3000@gmail.com';
     }
 
     function isTeacher() {
@@ -129,7 +129,14 @@ service cloud.firestore {
 
     match /roles/{roleEmail} {
       allow read: if isSignedIn() && (request.auth.token.email == roleEmail || isAdmin());
-      allow write: if isAdmin();
+      allow create: if isAdmin()
+        || (
+          isBootstrapAdminEmail()
+          && roleEmail == request.auth.token.email
+          && incoming().keys().hasOnly(['role'])
+          && incoming().role == 'ADMIN'
+        );
+      allow update, delete: if isAdmin();
     }
   }
 }
