@@ -63,7 +63,8 @@ export default function Login() {
     setLoading(true);
     try {
       // Handle both email and username (zayd12345)
-      const loginIdentifier = email.includes('@') ? email : `${email}@ghiabi.com`;
+      const normalizedEmail = email.trim();
+      const loginIdentifier = normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@ghiabi.com`;
       await signInWithEmailAndPassword(auth, loginIdentifier, password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
@@ -75,14 +76,16 @@ export default function Login() {
   };
 
   const handleResetPassword = async () => {
-    if (!resetEmail) {
+    const normalizedResetEmail = resetEmail.trim();
+
+    if (!normalizedResetEmail) {
       toast.error('يرجى إدخال البريد الإلكتروني');
       return;
     }
     
     setResetLoading(true);
     try {
-      const fullEmail = resetEmail.includes('@') ? resetEmail : `${resetEmail}@ghiabi.com`;
+      const fullEmail = normalizedResetEmail.includes('@') ? normalizedResetEmail : `${normalizedResetEmail}@ghiabi.com`;
       await sendPasswordResetEmail(auth, fullEmail);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
       setIsResetOpen(false);
@@ -127,7 +130,7 @@ export default function Login() {
                 <Label htmlFor="password">كلمة المرور</Label>
                 <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
                   <DialogTrigger render={
-                    <Button variant="link" className="px-0 font-normal text-xs h-auto underline">
+                    <Button type="button" variant="link" className="px-0 font-normal text-xs h-auto underline">
                       نسيت كلمة المرور؟
                     </Button>
                   } />
@@ -145,8 +148,8 @@ export default function Login() {
                       <Label htmlFor="resetEmail">البريد الإلكتروني</Label>
                       <Input
                         id="resetEmail"
-                        type="email"
-                        placeholder="example@ghiabi.com"
+                        type="text"
+                        placeholder="zayd12345 أو example@ghiabi.com"
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
                         className="mt-2"
@@ -154,8 +157,8 @@ export default function Login() {
                       />
                     </div>
                     <DialogFooter className="gap-2">
-                      <Button variant="outline" onClick={() => setIsResetOpen(false)}>إلغاء</Button>
-                      <Button onClick={handleResetPassword} disabled={resetLoading}>
+                      <Button type="button" variant="outline" onClick={() => setIsResetOpen(false)}>إلغاء</Button>
+                      <Button type="button" onClick={handleResetPassword} disabled={resetLoading}>
                         {resetLoading ? 'جاري الإرسال...' : 'إرسال الرابط'}
                       </Button>
                     </DialogFooter>
