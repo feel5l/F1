@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,19 +14,22 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { buildClassKey, buildPreview, normalizeText, type CsvRow, type ImportPreview } from '../lib/importCsv';
 
 export default function Students() {
+  const { isAdmin } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('all');
-  
+
   // Form State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [importClassId, setImportClassId] = useState('');
   const [importLoading, setImportLoading] = useState(false);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importFileName, setImportFileName] = useState('');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -42,7 +46,7 @@ export default function Students() {
     try {
       const studentSnap = await getDocs(collection(db, 'students'));
       setStudents(studentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student)));
-      
+
       const classSnap = await getDocs(collection(db, 'classes'));
       setClasses(classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class)));
     } catch (err) {
@@ -73,7 +77,7 @@ export default function Students() {
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + [headers, ...rows].map(e => e.join(",")).join("\n");
-      
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -81,6 +85,18 @@ export default function Students() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const downloadImportTemplate = () => {
+    const header =
+      'class_name,grade_level,teacher_email,student_full_name,guardian_name,guardian_phone,parent_email,is_active\n';
+    const blob = new Blob(["\uFEFF" + header], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ghiyabi_import_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleOpenDialog = (student: Student | null = null) => {
@@ -111,6 +127,11 @@ export default function Students() {
   };
 
   const handleSave = async () => {
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      return;
+    }
+
     if (!formData.fullName || !formData.classId) {
       toast.error('يرجى إكمال البيانات الأساسية');
       return;
@@ -138,6 +159,11 @@ export default function Students() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      return;
+    }
+
     if (!confirm('هل أنت متأكد من حذف هذا الطالب؟')) return;
     try {
       await deleteDoc(doc(db, 'students', id));
@@ -150,44 +176,35 @@ export default function Students() {
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !importClassId) {
-      if (!importClassId) toast.error('يرجى اختيار الفصل أولاً');
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      event.target.value = '';
       return;
     }
+    if (!file) return;
 
     setImportLoading(true);
+    setImportPreview(null);
+    setImportFileName(file.name);
     Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
       complete: async (results) => {
         try {
-          const data = results.data as string[][];
-          // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
-          
-          let count = 0;
-          for (let i = startIndex; i < data.length; i++) {
-            const row = data[i];
-            const name = row[0]?.trim();
-            if (name) {
-              const selectedClass = classes.find(c => c.id === importClassId);
-              await addDoc(collection(db, 'students'), {
-                fullName: name,
-                classId: importClassId,
-                className: selectedClass?.name || '',
-                guardianName: row[1]?.trim() || '',
-                guardianPhone: row[2]?.trim() || '',
-                parentEmail: row[3]?.trim() || '',
-                isActive: true,
-              });
-              count++;
-            }
+          const rows = (results.data as CsvRow[]) || [];
+          const preview = buildPreview(rows);
+          setImportPreview(preview);
+
+          if (preview.studentsDiscovered === 0) {
+            toast.error('لم يتم العثور على صفوف صالحة للاستيراد');
+          } else if (preview.rejectedRows > 0) {
+            toast.message(`تم تجهيز المعاينة. يوجد ${preview.rejectedRows} صف/صفوف مرفوضة.`);
+          } else {
+            toast.success('تم تجهيز المعاينة بنجاح');
           }
-          
-          toast.success(`تم استيراد ${count} طالباً بنجاح`);
-          setIsImportDialogOpen(false);
-          fetchData();
         } catch (err) {
           console.error(err);
-          toast.error('حدث خطأ أثناء استيراد البيانات');
+          toast.error('حدث خطأ أثناء تجهيز المعاينة');
         } finally {
           setImportLoading(false);
           // Reset file input
@@ -202,11 +219,114 @@ export default function Students() {
     });
   };
 
+  const applyImport = async () => {
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      return;
+    }
+    if (!importPreview) return;
+    if (importPreview.studentsDiscovered === 0) {
+      toast.error('لا توجد صفوف صالحة للتطبيق');
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      // -------- 1) Upsert classes (by logical key) --------
+      const classSnap = await getDocs(collection(db, 'classes'));
+      const existingClasses = classSnap.docs.map(d => ({ id: d.id, ...d.data() } as Class));
+
+      const classKeyToId = new Map<string, string>();
+      const classKeyToName = new Map<string, string>();
+      for (const c of existingClasses) {
+        const key = buildClassKey(normalizeText(c.gradeLevel), normalizeText(c.name));
+        classKeyToId.set(key, c.id);
+        classKeyToName.set(key, c.name);
+      }
+
+      for (const c of importPreview.classes) {
+        if (!classKeyToId.has(c.key)) {
+          const ref = await addDoc(collection(db, 'classes'), {
+            name: c.className,
+            gradeLevel: c.gradeLevel,
+            teacherEmail: c.teacherEmail || '',
+          });
+          classKeyToId.set(c.key, ref.id);
+          classKeyToName.set(c.key, c.className);
+        } else if (c.teacherEmail) {
+          const id = classKeyToId.get(c.key)!;
+          await updateDoc(doc(db, 'classes', id), {
+            teacherEmail: c.teacherEmail,
+          });
+        }
+      }
+
+      // -------- 2) Upsert students (by classId + fullName) --------
+      const studentSnap = await getDocs(collection(db, 'students'));
+      const existingStudents = studentSnap.docs.map(d => ({ id: d.id, ...d.data() } as Student));
+      const studentKeyToId = new Map<string, string>();
+      for (const s of existingStudents) {
+        const key = `${s.classId}__${normalizeText(s.fullName)}`;
+        studentKeyToId.set(key, s.id);
+      }
+
+      let created = 0;
+      let updated = 0;
+
+      for (const s of importPreview.students) {
+        const classId = classKeyToId.get(s.classKey);
+        if (!classId) continue;
+
+        const className = classKeyToName.get(s.classKey) || s.classKey.split('__')[1] || '';
+        const studentKey = `${classId}__${normalizeText(s.studentFullName)}`;
+        const existingId = studentKeyToId.get(studentKey);
+
+        const patch: Partial<Student> = {
+          classId,
+          className,
+          fullName: s.studentFullName,
+        };
+
+        // update-only-non-empty
+        if (s.guardianName) patch.guardianName = s.guardianName;
+        if (s.guardianPhone) patch.guardianPhone = s.guardianPhone;
+        if (s.parentEmail) patch.parentEmail = s.parentEmail;
+        if (typeof s.isActive === 'boolean') patch.isActive = s.isActive;
+
+        if (existingId) {
+          await updateDoc(doc(db, 'students', existingId), patch);
+          updated++;
+        } else {
+          await addDoc(collection(db, 'students'), {
+            guardianName: '',
+            guardianPhone: '',
+            isActive: true,
+            ...patch,
+          });
+          created++;
+        }
+      }
+
+      toast.success(`تم تطبيق الاستيراد: ${created} طالب جديد، ${updated} تحديث`);
+      setIsImportDialogOpen(false);
+      setImportPreview(null);
+      setImportFileName('');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء تطبيق الاستيراد');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase());
     const matchesClass = classFilter === 'all' || s.classId === classFilter;
     return matchesSearch && matchesClass;
   });
+
+  const colCount = isAdmin ? 6 : 5;
 
   return (
     <div className="space-y-6">
@@ -215,20 +335,28 @@ export default function Students() {
           <h1 className="text-3xl font-bold">إدارة الطلاب</h1>
           <p className="text-muted-foreground">عرض وتعديل قائمة الطلاب في المدرسة</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} className="gap-2 border-primary text-primary hover:bg-primary/5">
-            <Upload className="w-4 h-4" />
-            استيراد من CSV
-          </Button>
-          <Button variant="outline" onClick={exportToCSV} className="gap-2">
-            <Download className="w-4 h-4" />
-            تصدير الطلاب (CSV)
-          </Button>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="w-4 h-4 mr-2" />
-            إضافة طالب جديد
-          </Button>
-        </div>
+        {isAdmin ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsImportDialogOpen(true)}
+              className="gap-2 border-primary text-primary hover:bg-primary/5"
+            >
+              <Upload className="w-4 h-4" />
+              استيراد CSV شامل
+            </Button>
+            <Button variant="outline" onClick={exportToCSV} className="gap-2">
+              <Download className="w-4 h-4" />
+              تصدير الطلاب (CSV)
+            </Button>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="w-4 h-4 mr-2" />
+              إضافة طالب جديد
+            </Button>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">صلاحيات القراءة فقط</div>
+        )}
       </div>
 
       <Card>
@@ -272,14 +400,14 @@ export default function Students() {
                   <TableHead>اسم ولي الأمر</TableHead>
                   <TableHead>هاتف ولي الأمر</TableHead>
                   <TableHead className="w-[100px]">الحالة</TableHead>
-                  <TableHead className="text-left">إجراءات</TableHead>
+                  {isAdmin && <TableHead className="text-left">إجراءات</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-10">جاري التحميل...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={colCount} className="text-center py-10">جاري التحميل...</TableCell></TableRow>
                 ) : filteredStudents.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-10">لا يوجد طلاب مطابقين</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={colCount} className="text-center py-10">لا يوجد طلاب مطابقين</TableCell></TableRow>
                 ) : filteredStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">{student.fullName}</TableCell>
@@ -291,14 +419,21 @@ export default function Students() {
                         {student.isActive ? 'نشط' : 'غير نشط'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-left space-x-2 space-x-reverse">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(student)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(student.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-left space-x-2 space-x-reverse">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(student)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(student.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -307,7 +442,7 @@ export default function Students() {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => (isAdmin ? setIsDialogOpen(open) : setIsDialogOpen(false))}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingStudent ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد'}</DialogTitle>
@@ -367,12 +502,21 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+      <Dialog
+        open={isImportDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setImportPreview(null);
+            setImportFileName('');
+          }
+          setIsImportDialogOpen(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5 text-primary" />
-              استيراد الطلاب من ملف Excel / CSV
+              استيراد CSV شامل (طلاب + فصول)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -380,25 +524,17 @@ export default function Students() {
               <p className="font-semibold text-primary">تعليمات الملف:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>يجب أن يكون الملف بصيغة CSV.</li>
-                <li>العمود الأول: اسم الطالب الكامل.</li>
-                <li>العمود الثاني (اختياري): اسم ولي الأمر.</li>
-                <li>العمود الثالث (اختياري): رقم هاتف ولي الأمر.</li>
-                <li>العمود الرابع (اختياري): البريد الإلكتروني لولي الأمر.</li>
+                <li>يتم الاعتماد على Header ثابت بأسماء الأعمدة.</li>
+                <li>يمكنك تنزيل قالب جاهز ثم تعبئته.</li>
               </ul>
             </div>
 
-            <div className="space-y-2">
-              <Label>اختر الفصل الذي سيتم إضافة الطلاب إليه</Label>
-              <Select value={importClassId} onValueChange={setImportClassId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الفصل الوجهة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <Button variant="outline" className="gap-2" onClick={downloadImportTemplate}>
+                <Download className="w-4 h-4" />
+                تنزيل قالب CSV
+              </Button>
+              {importFileName && <span className="text-sm text-muted-foreground">الملف: {importFileName}</span>}
             </div>
 
             <div className="space-y-2">
@@ -407,17 +543,50 @@ export default function Students() {
                 type="file"
                 accept=".csv"
                 onChange={handleImportCSV}
-                disabled={!importClassId || importLoading}
+                disabled={!isAdmin || importLoading}
                 className="cursor-pointer"
               />
             </div>
-            
+
             {importLoading && (
-              <p className="text-sm text-muted-foreground animate-pulse">جاري الاستيراد، يرجى الانتظار...</p>
+              <p className="text-sm text-muted-foreground animate-pulse">جاري المعالجة، يرجى الانتظار...</p>
+            )}
+
+            {importPreview && (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>إجمالي الصفوف: {importPreview.totalRows}</div>
+                  <div>الصفوف المقبولة: {importPreview.acceptedRows}</div>
+                  <div>الصفوف المرفوضة: {importPreview.rejectedRows}</div>
+                  <div>الفصول المكتشفة: {importPreview.classesDiscovered}</div>
+                  <div>الطلاب المكتشفون: {importPreview.studentsDiscovered}</div>
+                </div>
+
+                {importPreview.errors.length > 0 && (
+                  <div className="rounded-md border p-3">
+                    <p className="font-semibold text-destructive mb-2">أخطاء (أول 10):</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {importPreview.errors.slice(0, 10).map((e) => (
+                        <li key={`${e.rowNumber}-${e.reason}`}>
+                          سطر {e.rowNumber}: {e.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)} disabled={importLoading}>إغلاق</Button>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)} disabled={importLoading}>
+              إغلاق
+            </Button>
+            <Button
+              onClick={applyImport}
+              disabled={!isAdmin || importLoading || !importPreview || importPreview.studentsDiscovered === 0}
+            >
+              تطبيق الاستيراد
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

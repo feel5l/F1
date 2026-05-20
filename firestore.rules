@@ -105,7 +105,7 @@ service cloud.firestore {
 
     match /students/{studentId} {
       allow read: if isSignedIn();
-      allow write: if (isAdmin() || isTeacherLeader()) && isValidStudent(incoming());
+      allow write: if isAdmin() && isValidStudent(incoming());
     }
 
     match /sessions/{sessionId} {
