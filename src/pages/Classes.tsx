@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, doc, updateDoc, query, where, deleteDoc, writeBatch, orderBy } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Class, StaffMember } from '../types';
 import { Edit2, Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';
@@ -25,11 +27,15 @@ import {
 import { Label } from '@/components/ui/label';
 
 export default function Classes() {
+  const { isAdmin } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [classForm, setClassForm] = useState({ name: '', gradeLevel: '', teacherEmail: '' });
 
   const fetchData = async () => {
     setLoading(true);
@@ -54,8 +60,12 @@ export default function Classes() {
   }, []);
 
   const handleUpdateTeacher = async () => {
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      return;
+    }
     if (!editingClass) return;
-    
+
     try {
       const classRef = doc(db, 'classes', editingClass.id);
       await updateDoc(classRef, {
@@ -74,7 +84,61 @@ export default function Classes() {
     // Actually I should keep it to avoid breaking things, but maybe simplify
   };
 
+  const openCreate = () => {
+    if (!isAdmin) return;
+    setEditingId(null);
+    setClassForm({ name: '', gradeLevel: '', teacherEmail: '' });
+    setIsEditDialogOpen(true);
+  };
+
+  const openEdit = (c: Class) => {
+    if (!isAdmin) return;
+    setEditingId(c.id);
+    setClassForm({
+      name: c.name || '',
+      gradeLevel: c.gradeLevel || '',
+      teacherEmail: c.teacherEmail || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const saveClass = async () => {
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      return;
+    }
+    if (!classForm.name.trim() || !classForm.gradeLevel.trim()) {
+      toast.error('يرجى إدخال اسم الفصل والمرحلة');
+      return;
+    }
+
+    try {
+      const payload = {
+        name: classForm.name.trim(),
+        gradeLevel: classForm.gradeLevel.trim(),
+        teacherEmail: classForm.teacherEmail.trim().toLowerCase(),
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, 'classes', editingId), payload);
+        toast.success('تم تحديث الفصل');
+      } else {
+        await addDoc(collection(db, 'classes'), payload);
+        toast.success('تم إضافة الفصل');
+      }
+
+      setIsEditDialogOpen(false);
+      fetchData();
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'classes');
+    }
+  };
+
   const handleDelete = async (id: string) => {
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تنفيذ هذه العملية');
+      return;
+    }
     if (!confirm('حذف الفصل سيؤدي لمشاكل في بيانات الطلاب المرتبطين به. هل أنت متأكد؟')) return;
     try {
       await deleteDoc(doc(db, 'classes', id));
@@ -93,6 +157,12 @@ export default function Classes() {
           <p className="text-muted-foreground">قائمة الفصول الدراسية وإسناد المعلمين</p>
         </div>
         <div className="flex gap-2">
+          {isAdmin && (
+            <Button onClick={openCreate} className="gap-2">
+              <Plus className="w-4 h-4" />
+              إضافة فصل
+            </Button>
+          )}
           {classes.length === 0 && (
             <Button variant="secondary" onClick={seedClasses} disabled={loading}>
               <RefreshCw className="w-4 h-4 mr-2" />
@@ -114,15 +184,15 @@ export default function Classes() {
                   <TableHead className="text-right">اسم الفصل</TableHead>
                   <TableHead className="text-right">المرحلة</TableHead>
                   <TableHead className="text-right">المعلم المسؤول</TableHead>
-                  <TableHead className="text-left w-[120px]">إجراءات</TableHead>
+                  {isAdmin && <TableHead className="text-left w-[160px]">إجراءات</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-10">جاري التحميل...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 4 : 3} className="text-center py-10">جاري التحميل...</TableCell></TableRow>
                 ) : classes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-10 space-y-4">
+                    <TableCell colSpan={isAdmin ? 4 : 3} className="text-center py-10 space-y-4">
                       <p>لا توجد فصول مضافة بعد</p>
                     </TableCell>
                   </TableRow>
@@ -142,23 +212,28 @@ export default function Classes() {
                           <span className="text-muted-foreground italic">غير محدد</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-left">
-                        <div className="flex gap-2 justify-end">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => {
-                              setEditingClass(c);
-                              setIsDialogOpen(true);
-                            }}
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(c.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-left">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditingClass(c);
+                                setIsDialogOpen(true);
+                              }}
+                            >
+                              <UserCheck className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(c.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   )
                 })}
@@ -167,6 +242,37 @@ export default function Classes() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => (isAdmin ? setIsEditDialogOpen(open) : setIsEditDialogOpen(false))}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'تعديل فصل' : 'إضافة فصل'}</DialogTitle>
+            <DialogDescription>أدخل بيانات الفصل ثم احفظ.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>اسم الفصل</Label>
+              <Input value={classForm.name} onChange={(e) => setClassForm({ ...classForm, name: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>المرحلة</Label>
+              <Input value={classForm.gradeLevel} onChange={(e) => setClassForm({ ...classForm, gradeLevel: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>بريد المعلم (اختياري)</Label>
+              <Input
+                dir="ltr"
+                value={classForm.teacherEmail}
+                onChange={(e) => setClassForm({ ...classForm, teacherEmail: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={saveClass}>حفظ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
@@ -179,8 +285,8 @@ export default function Classes() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label>المعلم</Label>
-              <Select 
-                value={editingClass?.teacherEmail || "none"} 
+              <Select
+                value={editingClass?.teacherEmail || "none"}
                 onValueChange={(val) => setEditingClass(prev => prev ? { ...prev, teacherEmail: val === "none" ? "" : val } : null)}
               >
                 <SelectTrigger>
