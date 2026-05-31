@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { normalizeGhiyabiIdentifier } from './lib/authIdentifiers';
 
-describe('Basic Sanity Test', () => {
-  it('should work', () => {
-    expect(1 + 1).toBe(2);
+describe('test harness', () => {
+  it('loads project modules', () => {
+    expect(normalizeGhiyabiIdentifier('demo')).toContain('@ghiabi.com');
   });
 });
