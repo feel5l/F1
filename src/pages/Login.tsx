@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
+import { normalizeGhiabiEmail } from '../lib/authIdentifiers';
 import {
   Dialog,
   DialogContent,
@@ -63,9 +64,7 @@ export default function Login() {
     setLoading(true);
     try {
       // Handle both email and username (zayd12345)
-      const normalizedEmail = email.trim();
-      const loginIdentifier = normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@ghiabi.com`;
-      await signInWithEmailAndPassword(auth, loginIdentifier, password);
+      await signInWithEmailAndPassword(auth, normalizeGhiabiEmail(email), password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
@@ -76,17 +75,14 @@ export default function Login() {
   };
 
   const handleResetPassword = async () => {
-    const normalizedResetEmail = resetEmail.trim();
-
-    if (!normalizedResetEmail) {
+    if (!resetEmail.trim()) {
       toast.error('يرجى إدخال البريد الإلكتروني');
       return;
     }
     
     setResetLoading(true);
     try {
-      const fullEmail = normalizedResetEmail.includes('@') ? normalizedResetEmail : `${normalizedResetEmail}@ghiabi.com`;
-      await sendPasswordResetEmail(auth, fullEmail);
+      await sendPasswordResetEmail(auth, normalizeGhiabiEmail(resetEmail));
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
       setIsResetOpen(false);
     } catch (error: any) {
