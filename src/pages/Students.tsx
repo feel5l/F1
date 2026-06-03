@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { getCsvImportStartIndex } from '../lib/csvImport';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -161,7 +162,7 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
+          const startIndex = getCsvImportStartIndex(data[0][0]);
           
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
