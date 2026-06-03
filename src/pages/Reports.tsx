@@ -26,6 +26,7 @@ import {
   Pie
 } from 'recharts';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
+import { calculateAttendanceStats } from '../lib/attendanceStats';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -125,15 +126,7 @@ export default function Reports() {
 
       setLogs(logsData);
 
-      // Calculate Stats
-      const total = logsData.length;
-      const present = logsData.filter(l => l.status === 'حاضر').length;
-      const absent = logsData.filter(l => l.status === 'غائب').length;
-      const late = logsData.filter(l => l.status === 'متأخر').length;
-      const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
-
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      setStats(calculateAttendanceStats(logsData));
 
     } catch (err) {
       console.error(err);
