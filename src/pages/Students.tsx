@@ -13,6 +13,7 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { getCsvDataStartIndex, parseStudentCsvRow } from '../lib/csvImport';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -161,21 +162,20 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
+          const startIndex = getCsvDataStartIndex(data[0]?.[0]);
           
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
-            const row = data[i];
-            const name = row[0]?.trim();
-            if (name) {
+            const parsed = parseStudentCsvRow(data[i]);
+            if (parsed) {
               const selectedClass = classes.find(c => c.id === importClassId);
               await addDoc(collection(db, 'students'), {
-                fullName: name,
+                fullName: parsed.fullName,
                 classId: importClassId,
                 className: selectedClass?.name || '',
-                guardianName: row[1]?.trim() || '',
-                guardianPhone: row[2]?.trim() || '',
-                parentEmail: row[3]?.trim() || '',
+                guardianName: parsed.guardianName,
+                guardianPhone: parsed.guardianPhone,
+                parentEmail: parsed.parentEmail,
                 isActive: true,
               });
               count++;
