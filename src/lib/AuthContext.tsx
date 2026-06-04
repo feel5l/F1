@@ -4,6 +4,7 @@ import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
+import { deriveAuthFlags } from './roles';
 
 interface AuthContextType {
   user: User | null;
@@ -79,9 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const isAdmin = staffMember?.appRole === 'ADMIN';
-  const isTeacher = staffMember?.appRole === 'TEACHER' || staffMember?.appRole === 'TEACHER_LEADER';
-  const isSupervisor = staffMember?.appRole === 'SUPERVISOR';
+  const { isAdmin, isTeacher, isSupervisor } = deriveAuthFlags(staffMember?.appRole);
 
   return (
     <AuthContext.Provider value={{ user, staffMember, loading, isAdmin, isTeacher, isSupervisor }}>
