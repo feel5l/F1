@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format } from 'date-fns';
+import { computeAttendanceStats, filterLogsByDateRange, aggregateTrendByDate } from '../lib/attendanceStats';
 import { ar } from 'date-fns/locale';
 import {
   LineChart,
@@ -110,30 +111,10 @@ export default function Reports() {
       const snap = await getDocs(q);
       let logsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AttendanceLog));
 
-      // Filter by Date Range (client-side for simplicity since we want relative ranges)
-      const now = new Date();
-      if (dateRange === 'today') {
-        const start = startOfDay(now);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      } else if (dateRange === 'week') {
-        const start = subDays(now, 7);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      } else if (dateRange === 'month') {
-        const start = startOfMonth(now);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      }
+      logsData = filterLogsByDateRange(logsData, dateRange);
 
       setLogs(logsData);
-
-      // Calculate Stats
-      const total = logsData.length;
-      const present = logsData.filter(l => l.status === 'حاضر').length;
-      const absent = logsData.filter(l => l.status === 'غائب').length;
-      const late = logsData.filter(l => l.status === 'متأخر').length;
-      const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
-
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      setStats(computeAttendanceStats(logsData));
 
     } catch (err) {
       console.error(err);
@@ -154,20 +135,7 @@ export default function Reports() {
   }, [selectedClass, selectedStudent, dateRange]);
 
   // Chart Data: Trends by Date
-  const trendData = React.useMemo(() => {
-    const daily: Record<string, { date: string; dateObj: Date; حاضر: number; غائب: number; متأخر: number; بعذر: number }> = {};
-    
-    logs.forEach(log => {
-      const d = log.timestamp.toDate();
-      const key = format(d, 'yyyy-MM-dd');
-      if (!daily[key]) {
-        daily[key] = { date: format(d, 'MMM d', { locale: ar }), dateObj: d, حاضر: 0, غائب: 0, متأخر: 0, بعذر: 0 };
-      }
-      daily[key][log.status]++;
-    });
-
-    return Object.values(daily).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-  }, [logs]);
+  const trendData = React.useMemo(() => aggregateTrendByDate(logs), [logs]);
 
   const pieData = [
     { name: 'حاضر', value: stats.present, color: STATUS_COLORS['حاضر'] },
