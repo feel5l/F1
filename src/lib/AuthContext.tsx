@@ -4,6 +4,12 @@ import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
+import {
+  shouldBootstrapAdmin,
+  mergeStaffWithRole,
+  createStaffFromRole,
+  resolveRoleFlags,
+} from './rbac';
 
 interface AuthContextType {
   user: User | null;
@@ -41,29 +47,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const roleRef = doc(db, 'roles', authUser.email);
           const roleSnap = await getDoc(roleRef);
           let roleData = roleSnap.exists() ? roleSnap.data() : null;
-          if (!roleData?.role && authUser.email === 'alzaem3000@gmail.com') {
+          if (shouldBootstrapAdmin(authUser.email, roleData)) {
             await setDoc(roleRef, { role: 'ADMIN' as AppRole });
             toast.success('تم تفعيل صلاحيات المدير بنجاح في قاعدة البيانات');
             roleData = { role: 'ADMIN' };
           }
 
           if (!querySnapshot.empty) {
-            const data = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember;
-            // Overwrite appRole if present in roles collection
-            if (roleData && roleData.role) {
-              data.appRole = roleData.role as AppRole;
-            }
+            const data = mergeStaffWithRole(
+              { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember,
+              roleData
+            );
             setStaffMember(data);
           } else if (roleData && roleData.role) {
-            // In case user is in roles but not yet in staff (safety fallback)
-            setStaffMember({
-              fullName: authUser.displayName || 'مستخدم جديد',
-              email: authUser.email,
-              phone: '',
-              role: 'موظف',
-              appRole: roleData.role as AppRole,
-              specialization: ''
-            });
+            setStaffMember(
+              createStaffFromRole(authUser.email, authUser.displayName, roleData.role as AppRole)
+            );
           } else {
             setStaffMember(null);
           }
@@ -79,9 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const isAdmin = staffMember?.appRole === 'ADMIN';
-  const isTeacher = staffMember?.appRole === 'TEACHER' || staffMember?.appRole === 'TEACHER_LEADER';
-  const isSupervisor = staffMember?.appRole === 'SUPERVISOR';
+  const { isAdmin, isTeacher, isSupervisor } = resolveRoleFlags(staffMember?.appRole);
 
   return (
     <AuthContext.Provider value={{ user, staffMember, loading, isAdmin, isTeacher, isSupervisor }}>
