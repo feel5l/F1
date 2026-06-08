@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
-import { normalizeLoginIdentifier } from '../lib/authUtils';
+import { normalizeLoginIdentifier, shouldFallbackToGoogleRedirect } from '../lib/authUtils';
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,7 @@ export default function Login() {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
-      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+      if (shouldFallbackToGoogleRedirect(error?.code)) {
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
         return;

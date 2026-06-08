@@ -6,9 +6,11 @@ import {
   shouldBootstrapAdmin,
   mergeStaffWithRole,
   createStaffFromRole,
+  filterClassesForReports,
+  filterClassesForAttendance,
   ADMIN_BOOTSTRAP_EMAIL,
 } from './rbac';
-import { AppRole, StaffMember } from '../types';
+import { AppRole, Class, StaffMember } from '../types';
 
 const sampleNav = [
   { name: 'Dashboard', path: '/', roles: ['ADMIN', 'TEACHER'] as AppRole[] },
@@ -120,5 +122,47 @@ describe('createStaffFromRole', () => {
   it('uses default name when display name is missing', () => {
     const staff = createStaffFromRole('new@ghiabi.com', null, 'SUPERVISOR');
     expect(staff.fullName).toBe('مستخدم جديد');
+  });
+});
+
+const sampleClasses: Class[] = [
+  { id: 'c1', name: '1أ', gradeLevel: '1', teacherEmail: 'teacher@ghiabi.com' },
+  { id: 'c2', name: '2ب', gradeLevel: '2', teacherEmail: 'other@ghiabi.com' },
+];
+
+describe('filterClassesForReports', () => {
+  it('returns all classes for admin', () => {
+    expect(filterClassesForReports(sampleClasses, true, 'admin@ghiabi.com')).toEqual(sampleClasses);
+  });
+
+  it('filters to teacher-assigned classes for non-admin', () => {
+    const filtered = filterClassesForReports(sampleClasses, false, 'teacher@ghiabi.com');
+    expect(filtered.map((c) => c.id)).toEqual(['c1']);
+  });
+
+  it('returns empty list when non-admin has no email', () => {
+    expect(filterClassesForReports(sampleClasses, false, null)).toEqual([]);
+  });
+});
+
+describe('filterClassesForAttendance', () => {
+  it('returns all classes for attendance officer', () => {
+    expect(
+      filterClassesForAttendance(sampleClasses, 'ATTENDANCE_OFFICER', false, 'officer@ghiabi.com')
+    ).toEqual(sampleClasses);
+  });
+
+  it('returns all classes for teacher leader and supervisor', () => {
+    expect(
+      filterClassesForAttendance(sampleClasses, 'TEACHER_LEADER', false, 'leader@ghiabi.com')
+    ).toEqual(sampleClasses);
+    expect(
+      filterClassesForAttendance(sampleClasses, 'SUPERVISOR', false, 'super@ghiabi.com')
+    ).toEqual(sampleClasses);
+  });
+
+  it('filters to assigned classes for plain teacher', () => {
+    const filtered = filterClassesForAttendance(sampleClasses, 'TEACHER', false, 'teacher@ghiabi.com');
+    expect(filtered.map((c) => c.id)).toEqual(['c1']);
   });
 });

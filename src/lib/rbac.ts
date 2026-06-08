@@ -1,4 +1,4 @@
-import { AppRole, StaffMember } from '../types';
+import { AppRole, Class, StaffMember } from '../types';
 
 export const ADMIN_BOOTSTRAP_EMAIL = 'alzaem3000@gmail.com';
 
@@ -95,4 +95,37 @@ export function createStaffFromRole(
     specialization: '',
     nationalId: '',
   };
+}
+
+/**
+ * Filters classes visible on the reports page (admin sees all, others see assigned classes).
+ */
+export function filterClassesForReports(
+  classes: Class[],
+  isAdmin: boolean,
+  userEmail?: string | null
+): Class[] {
+  if (isAdmin) return classes;
+  if (!userEmail) return [];
+  return classes.filter((c) => c.teacherEmail === userEmail);
+}
+
+/**
+ * Filters classes visible on the attendance page based on role.
+ */
+export function filterClassesForAttendance(
+  classes: Class[],
+  appRole: AppRole | undefined,
+  isAdmin: boolean,
+  userEmail?: string | null
+): Class[] {
+  const canSeeAll =
+    isAdmin ||
+    appRole === 'ATTENDANCE_OFFICER' ||
+    appRole === 'TEACHER_LEADER' ||
+    appRole === 'SUPERVISOR';
+
+  if (canSeeAll) return classes;
+  if (!userEmail) return [];
+  return classes.filter((c) => c.teacherEmail === userEmail);
 }
