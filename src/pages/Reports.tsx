@@ -26,6 +26,7 @@ import {
   Pie
 } from 'recharts';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
+import { filterClassesForUser } from '../lib/auth';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -60,11 +61,10 @@ export default function Reports() {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         
-        if (isAdmin) {
-          setClasses(classList);
-        } else {
-          setClasses(classList.filter(c => c.teacherEmail === user?.email));
-        }
+        setClasses(filterClassesForUser(classList, {
+          isAdmin,
+          userEmail: user?.email,
+        }));
       } catch (err) {
         console.error(err);
       }
