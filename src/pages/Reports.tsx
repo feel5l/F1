@@ -25,6 +25,7 @@ import {
   PieChart,
   Pie
 } from 'recharts';
+import { calculateDisciplineRate, countAttendanceByStatus } from '../lib/attendance';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
 import { filterClassesForUser } from '../lib/auth';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
@@ -125,15 +126,11 @@ export default function Reports() {
 
       setLogs(logsData);
 
-      // Calculate Stats
-      const total = logsData.length;
-      const present = logsData.filter(l => l.status === 'حاضر').length;
-      const absent = logsData.filter(l => l.status === 'غائب').length;
-      const late = logsData.filter(l => l.status === 'متأخر').length;
-      const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
-
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      const counts = countAttendanceByStatus(logsData.map((log) => log.status));
+      setStats({
+        ...counts,
+        rate: calculateDisciplineRate(counts),
+      });
 
     } catch (err) {
       console.error(err);

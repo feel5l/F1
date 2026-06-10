@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { countAttendanceByStatus } from '../lib/attendance';
 import { Class, Student, AttendanceStatus } from '../types';
 import { filterClassesForUser } from '../lib/auth';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
@@ -116,13 +117,7 @@ export default function Attendance() {
   };
 
   const attendanceList = Object.values(attendance) as { status: AttendanceStatus; note: string }[];
-
-  const stats = {
-    present: attendanceList.filter((a) => a.status === 'حاضر').length,
-    absent: attendanceList.filter((a) => a.status === 'غائب').length,
-    late: attendanceList.filter((a) => a.status === 'متأخر').length,
-    excused: attendanceList.filter((a) => a.status === 'بعذر').length,
-  };
+  const stats = countAttendanceByStatus(attendanceList.map((entry) => entry.status));
 
   return (
     <div className="space-y-6">
