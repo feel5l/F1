@@ -4,6 +4,8 @@ import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
+import { isBootstrapAdminEmail } from './auth-utils';
+import { deriveRoleFlags } from './permissions';
 
 interface AuthContextType {
   user: User | null;
@@ -41,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const roleRef = doc(db, 'roles', authUser.email);
           const roleSnap = await getDoc(roleRef);
           let roleData = roleSnap.exists() ? roleSnap.data() : null;
-          if (!roleData?.role && authUser.email === 'alzaem3000@gmail.com') {
+          if (!roleData?.role && isBootstrapAdminEmail(authUser.email)) {
             await setDoc(roleRef, { role: 'ADMIN' as AppRole });
             toast.success('تم تفعيل صلاحيات المدير بنجاح في قاعدة البيانات');
             roleData = { role: 'ADMIN' };
@@ -79,9 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const isAdmin = staffMember?.appRole === 'ADMIN';
-  const isTeacher = staffMember?.appRole === 'TEACHER' || staffMember?.appRole === 'TEACHER_LEADER';
-  const isSupervisor = staffMember?.appRole === 'SUPERVISOR';
+  const { isAdmin, isTeacher, isSupervisor } = deriveRoleFlags(staffMember?.appRole);
 
   return (
     <AuthContext.Provider value={{ user, staffMember, loading, isAdmin, isTeacher, isSupervisor }}>
