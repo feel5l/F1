@@ -22,6 +22,10 @@ describe('normalizeSchoolEmail', () => {
   it('does not double-append domain when @ is present', () => {
     expect(normalizeSchoolEmail('user@ghiabi.com')).toBe('user@ghiabi.com');
   });
+
+  it('returns empty string unchanged when input is blank', () => {
+    expect(normalizeSchoolEmail('   ')).toBe('');
+  });
 });
 
 describe('isBootstrapAdminEmail', () => {

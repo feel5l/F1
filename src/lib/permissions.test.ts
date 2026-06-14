@@ -34,6 +34,22 @@ describe('deriveRoleFlags', () => {
       isSupervisor: false,
     });
   });
+
+  it('marks SUPERVISOR without teacher or admin privileges', () => {
+    expect(deriveRoleFlags('SUPERVISOR')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: true,
+    });
+  });
+
+  it('does not grant teacher or admin flags to ATTENDANCE_OFFICER', () => {
+    expect(deriveRoleFlags('ATTENDANCE_OFFICER')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
 });
 
 describe('resolveCurrentRole', () => {
@@ -78,6 +94,24 @@ describe('getVisibleNavPaths', () => {
       '/logs',
       '/reports',
     ]);
+  });
+
+  it('gives attendance officers logs and attendance but not student or staff management', () => {
+    const paths = getVisibleNavPaths('ATTENDANCE_OFFICER');
+    expect(paths).toContain('/attendance');
+    expect(paths).toContain('/logs');
+    expect(paths).not.toContain('/students');
+    expect(paths).not.toContain('/staff');
+    expect(paths).not.toContain('/reports');
+  });
+
+  it('gives teacher leaders students, logs, and reports but not class admin', () => {
+    const paths = getVisibleNavPaths('TEACHER_LEADER');
+    expect(paths).toContain('/students');
+    expect(paths).toContain('/logs');
+    expect(paths).toContain('/reports');
+    expect(paths).not.toContain('/classes');
+    expect(paths).not.toContain('/staff');
   });
 });
 

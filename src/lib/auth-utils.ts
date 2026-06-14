@@ -4,6 +4,7 @@ export const BOOTSTRAP_ADMIN_EMAIL = 'alzaem3000@gmail.com';
 /** Converts a username or email into a full school login email. */
 export function normalizeSchoolEmail(identifier: string): string {
   const trimmed = identifier.trim();
+  if (!trimmed) return trimmed;
   return trimmed.includes('@') ? trimmed : `${trimmed}@${SCHOOL_EMAIL_DOMAIN}`;
 }
 
