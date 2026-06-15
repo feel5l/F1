@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
+import { canSeeAllClasses, filterClassesByRole } from '../lib/permissions';
+import { computeAttendanceStats, createInitialAttendance } from '../lib/attendance';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -29,13 +31,8 @@ export default function Attendance() {
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
       const role = staffMember?.appRole;
-      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
-      
-      if (canSeeAll) {
-        setClasses(list);
-      } else {
-        setClasses(list.filter(c => c.teacherEmail === user?.email));
-      }
+      const seeAll = canSeeAllClasses(role, isAdmin);
+      setClasses(filterClassesByRole(list, user?.email, seeAll));
     };
     if (user) fetchClasses();
   }, [user, isAdmin]);
@@ -49,11 +46,7 @@ export default function Attendance() {
       const studentList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
       setStudents(studentList);
       
-      // Initialize attendance with default "Present"
-      const initial: typeof attendance = {};
-      studentList.forEach(s => {
-        initial[s.id] = { status: 'حاضر', note: '' };
-      });
+      const initial = createInitialAttendance(studentList.map((s) => s.id));
       setAttendance(initial);
       setLoading(false);
     };
@@ -117,14 +110,7 @@ export default function Attendance() {
     }
   };
 
-  const attendanceList = Object.values(attendance) as { status: AttendanceStatus; note: string }[];
-
-  const stats = {
-    present: attendanceList.filter((a) => a.status === 'حاضر').length,
-    absent: attendanceList.filter((a) => a.status === 'غائب').length,
-    late: attendanceList.filter((a) => a.status === 'متأخر').length,
-    excused: attendanceList.filter((a) => a.status === 'بعذر').length,
-  };
+  const stats = computeAttendanceStats(attendance);
 
   return (
     <div className="space-y-6">

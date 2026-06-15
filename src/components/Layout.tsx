@@ -13,6 +13,8 @@ import {
   LogOut,
   Menu,
 } from 'lucide-react';
+import { filterNavItemsByRole, getRoleLabel } from '../lib/permissions';
+import { AppRole } from '../types';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface LayoutProps {
@@ -29,7 +31,12 @@ export default function Layout({ children }: LayoutProps) {
     navigate('/login');
   };
 
-  const navItems = [
+  const navItems: {
+    name: string;
+    path: string;
+    icon: typeof LayoutDashboard;
+    roles: AppRole[];
+  }[] = [
     { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
     { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
     { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
@@ -41,20 +48,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
 
-  const visibleNavItems = navItems.filter(item => 
-    item.roles.includes(currentRole as any)
-  );
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'مدير نظام';
-      case 'TEACHER': return 'معلم';
-      case 'TEACHER_LEADER': return 'رائد نشاط / رئيس قسم';
-      case 'ATTENDANCE_OFFICER': return 'مسؤول غياب';
-      case 'SUPERVISOR': return 'مشرف';
-      default: return 'موظف';
-    }
-  };
+  const visibleNavItems = filterNavItemsByRole(navItems, currentRole);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4 px-3">
