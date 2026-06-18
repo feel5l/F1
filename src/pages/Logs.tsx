@@ -12,6 +12,7 @@ import { ar } from 'date-fns/locale';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { buildAbsenceWhatsAppUrl } from '../lib/notifications';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -75,11 +76,11 @@ export default function Logs() {
 
     const date = log.timestamp instanceof Timestamp ? log.timestamp.toDate() : new Date();
     const formattedDate = format(date, 'PPP', { locale: ar });
-    const message = `السلام عليكم، نود إحاطتكم بظهور ابنكم/ابنتكم ${student.fullName} غائباً (أو متأخراً) عن مدرسة زيد بن ثابت اليوم ${formattedDate}. نرجو تزويدنا بالعذر. شكراً لكم.`;
-    
-    // Clean phone number (keep only digits)
-    const cleanPhone = student.guardianPhone.replace(/[^0-9]/g, '');
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = buildAbsenceWhatsAppUrl(
+      student.fullName,
+      student.guardianPhone,
+      formattedDate
+    );
     window.open(whatsappUrl, '_blank');
   };
 
