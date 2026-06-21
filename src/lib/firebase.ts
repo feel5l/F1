@@ -30,19 +30,30 @@ export interface FirestoreErrorInfo {
   }
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
+type AuthSnapshot = FirestoreErrorInfo['authInfo'];
+
+export function buildFirestoreErrorInfo(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null,
+  authSnapshot: AuthSnapshot = {}
+): FirestoreErrorInfo {
+  return {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-    },
+    authInfo: authSnapshot,
     operationType,
-    path
+    path,
   };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo = buildFirestoreErrorInfo(error, operationType, path, {
+    userId: auth.currentUser?.uid,
+    email: auth.currentUser?.email,
+    emailVerified: auth.currentUser?.emailVerified,
+    isAnonymous: auth.currentUser?.isAnonymous,
+    tenantId: auth.currentUser?.tenantId,
+  });
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }

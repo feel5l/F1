@@ -11,10 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
+import { canViewAllClasses } from '../lib/authUtils';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
-  const { user, isAdmin, staffMember } = useAuth();
+  const { user, staffMember } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [students, setStudents] = useState<Student[]>([]);
@@ -28,17 +29,14 @@ export default function Attendance() {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
-      const role = staffMember?.appRole;
-      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
-      
-      if (canSeeAll) {
+      if (canViewAllClasses(staffMember?.appRole)) {
         setClasses(list);
       } else {
         setClasses(list.filter(c => c.teacherEmail === user?.email));
       }
     };
     if (user) fetchClasses();
-  }, [user, isAdmin]);
+  }, [user, staffMember?.appRole]);
 
   useEffect(() => {
     if (!selectedClass) return;
