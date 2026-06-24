@@ -12,6 +12,11 @@ import { ar } from 'date-fns/locale';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import {
+  buildAbsenceWhatsAppMessage,
+  buildWhatsAppUrl,
+  hasGuardianPhone,
+} from '../lib/whatsapp';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -68,18 +73,15 @@ export default function Logs() {
   }, [user?.email, isAdmin]);
 
   const sendWhatsAppNotification = (log: AttendanceLog, student?: Student) => {
-    if (!student?.guardianPhone) {
+    if (!hasGuardianPhone(student?.guardianPhone)) {
       toast.error('رقم ولي الأمر غير متوفر لهذا الطالب');
       return;
     }
 
     const date = log.timestamp instanceof Timestamp ? log.timestamp.toDate() : new Date();
     const formattedDate = format(date, 'PPP', { locale: ar });
-    const message = `السلام عليكم، نود إحاطتكم بظهور ابنكم/ابنتكم ${student.fullName} غائباً (أو متأخراً) عن مدرسة زيد بن ثابت اليوم ${formattedDate}. نرجو تزويدنا بالعذر. شكراً لكم.`;
-    
-    // Clean phone number (keep only digits)
-    const cleanPhone = student.guardianPhone.replace(/[^0-9]/g, '');
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const message = buildAbsenceWhatsAppMessage(student!.fullName, formattedDate);
+    const whatsappUrl = buildWhatsAppUrl(student!.guardianPhone, message);
     window.open(whatsappUrl, '_blank');
   };
 
