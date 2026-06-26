@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Student, Class } from '../types';
+import { detectCsvHeaderStartIndex } from '../lib/attendance-stats';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
@@ -161,7 +162,7 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
+          const startIndex = detectCsvHeaderStartIndex(data[0][0]);
           
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {

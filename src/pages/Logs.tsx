@@ -12,6 +12,7 @@ import { ar } from 'date-fns/locale';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { buildWhatsAppUrl } from '../lib/attendance-stats';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -78,8 +79,7 @@ export default function Logs() {
     const message = `السلام عليكم، نود إحاطتكم بظهور ابنكم/ابنتكم ${student.fullName} غائباً (أو متأخراً) عن مدرسة زيد بن ثابت اليوم ${formattedDate}. نرجو تزويدنا بالعذر. شكراً لكم.`;
     
     // Clean phone number (keep only digits)
-    const cleanPhone = student.guardianPhone.replace(/[^0-9]/g, '');
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = buildWhatsAppUrl(student.guardianPhone, message);
     window.open(whatsappUrl, '_blank');
   };
 

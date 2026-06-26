@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
+import { canSeeAllClasses } from '../lib/rbac';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,7 +30,7 @@ export default function Attendance() {
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
       const role = staffMember?.appRole;
-      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
+      const canSeeAll = canSeeAllClasses(isAdmin, role);
       
       if (canSeeAll) {
         setClasses(list);
