@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { getRoleLabel, getVisibleNavPaths } from '../lib/rbac';
 import { auth } from '../lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,31 +31,18 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
-    { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
-    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
-    { name: 'إدارة الفصول', path: '/classes', icon: School, roles: ['ADMIN'] },
-    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'] },
-    { name: 'سجل الغياب', path: '/logs', icon: History, roles: ['ADMIN', 'ATTENDANCE_OFFICER', 'TEACHER_LEADER'] },
-    { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
+    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard },
+    { name: 'إدارة الطلاب', path: '/students', icon: Users },
+    { name: 'الهيئة التعليمية', path: '/staff', icon: Users },
+    { name: 'إدارة الفصول', path: '/classes', icon: School },
+    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck },
+    { name: 'سجل الغياب', path: '/logs', icon: History },
+    { name: 'التقارير', path: '/reports', icon: BarChart3 },
   ];
 
   const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
-
-  const visibleNavItems = navItems.filter(item => 
-    item.roles.includes(currentRole as any)
-  );
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'مدير نظام';
-      case 'TEACHER': return 'معلم';
-      case 'TEACHER_LEADER': return 'رائد نشاط / رئيس قسم';
-      case 'ATTENDANCE_OFFICER': return 'مسؤول غياب';
-      case 'SUPERVISOR': return 'مشرف';
-      default: return 'موظف';
-    }
-  };
+  const visiblePaths = new Set(getVisibleNavPaths(currentRole));
+  const visibleNavItems = navItems.filter((item) => visiblePaths.has(item.path));
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4 px-3">

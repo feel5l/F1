@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
+import { calculateReportsAttendanceRate, countAttendanceByStatus } from '../lib/attendance-stats';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -126,14 +127,12 @@ export default function Reports() {
       setLogs(logsData);
 
       // Calculate Stats
-      const total = logsData.length;
-      const present = logsData.filter(l => l.status === 'حاضر').length;
-      const absent = logsData.filter(l => l.status === 'غائب').length;
-      const late = logsData.filter(l => l.status === 'متأخر').length;
-      const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
+      const { total, present, absent, late, excused } = countAttendanceByStatus(
+        logsData.map((l) => l.status)
+      );
+      const rate = calculateReportsAttendanceRate(present, late, excused, total);
 
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      setStats({ total, present, absent, late, excused, rate });
 
     } catch (err) {
       console.error(err);
