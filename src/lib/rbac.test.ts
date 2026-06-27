@@ -8,6 +8,8 @@ import {
   createStaffFromRole,
   filterClassesForReports,
   filterClassesForAttendance,
+  resolveCurrentRole,
+  LAYOUT_NAV_ITEMS,
   ADMIN_BOOTSTRAP_EMAIL,
 } from './rbac';
 import { AppRole, Class, StaffMember } from '../types';
@@ -41,6 +43,33 @@ describe('resolveRoleFlags', () => {
       isTeacher: false,
       isSupervisor: false,
     });
+  });
+
+  it('identifies supervisor without teacher or admin flags', () => {
+    expect(resolveRoleFlags('SUPERVISOR')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: true,
+    });
+  });
+
+  it('does not treat attendance officer as teacher or supervisor', () => {
+    expect(resolveRoleFlags('ATTENDANCE_OFFICER')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
+});
+
+describe('resolveCurrentRole', () => {
+  it('prefers explicit appRole over isAdmin fallback', () => {
+    expect(resolveCurrentRole('TEACHER', true)).toBe('TEACHER');
+  });
+
+  it('falls back to ADMIN or TEACHER when appRole is missing', () => {
+    expect(resolveCurrentRole(undefined, true)).toBe('ADMIN');
+    expect(resolveCurrentRole(undefined, false)).toBe('TEACHER');
   });
 });
 
@@ -164,5 +193,29 @@ describe('filterClassesForAttendance', () => {
   it('filters to assigned classes for plain teacher', () => {
     const filtered = filterClassesForAttendance(sampleClasses, 'TEACHER', false, 'teacher@ghiabi.com');
     expect(filtered.map((c) => c.id)).toEqual(['c1']);
+  });
+
+  it('returns all classes for admin even without elevated appRole', () => {
+    expect(
+      filterClassesForAttendance(sampleClasses, undefined, true, 'admin@ghiabi.com')
+    ).toEqual(sampleClasses);
+  });
+});
+
+describe('layout navigation visibility', () => {
+  it('shows attendance and logs for ATTENDANCE_OFFICER', () => {
+    const paths = filterNavItemsByRole(LAYOUT_NAV_ITEMS, 'ATTENDANCE_OFFICER').map((i) => i.path);
+    expect(paths).toEqual(['/', '/attendance', '/logs']);
+  });
+
+  it('shows reports and staff for SUPERVISOR but not attendance', () => {
+    const paths = filterNavItemsByRole(LAYOUT_NAV_ITEMS, 'SUPERVISOR').map((i) => i.path);
+    expect(paths).toEqual(['/', '/staff', '/reports']);
+  });
+
+  it('shows student management only for TEACHER_LEADER', () => {
+    const paths = filterNavItemsByRole(LAYOUT_NAV_ITEMS, 'TEACHER_LEADER').map((i) => i.path);
+    expect(paths).toContain('/students');
+    expect(paths).not.toContain('/classes');
   });
 });

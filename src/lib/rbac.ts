@@ -14,6 +14,25 @@ export interface RoleFlags {
   isSupervisor: boolean;
 }
 
+/** Navigation role matrix matching Layout.tsx. */
+export const LAYOUT_NAV_ITEMS: NavItem[] = [
+  { name: 'لوحة التحكم', path: '/', roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
+  { name: 'إدارة الطلاب', path: '/students', roles: ['ADMIN', 'TEACHER_LEADER'] },
+  { name: 'الهيئة التعليمية', path: '/staff', roles: ['ADMIN', 'SUPERVISOR'] },
+  { name: 'إدارة الفصول', path: '/classes', roles: ['ADMIN'] },
+  { name: 'تحضير اليوم', path: '/attendance', roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'] },
+  { name: 'سجل الغياب', path: '/logs', roles: ['ADMIN', 'ATTENDANCE_OFFICER', 'TEACHER_LEADER'] },
+  { name: 'التقارير', path: '/reports', roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
+];
+
+/**
+ * Resolves the effective app role for navigation (matches Layout fallback logic).
+ */
+export function resolveCurrentRole(appRole?: AppRole, isAdmin = false): AppRole {
+  if (appRole) return appRole;
+  return isAdmin ? 'ADMIN' : 'TEACHER';
+}
+
 /**
  * Derives permission flags from an app role.
  */

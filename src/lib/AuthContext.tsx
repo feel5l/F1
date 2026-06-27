@@ -6,10 +6,9 @@ import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
 import {
   shouldBootstrapAdmin,
-  mergeStaffWithRole,
-  createStaffFromRole,
   resolveRoleFlags,
 } from './rbac';
+import { resolveStaffMemberFromAuth } from './authResolution';
 
 interface AuthContextType {
   user: User | null;
@@ -52,17 +51,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (!querySnapshot.empty) {
-            const data = mergeStaffWithRole(
-              { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember,
-              roleData
-            );
-            setStaffMember(data);
-          } else if (roleData && roleData.role) {
+            const staffRecord = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember;
             setStaffMember(
-              createStaffFromRole(authUser.email, authUser.displayName, roleData.role as AppRole)
+              resolveStaffMemberFromAuth(staffRecord, roleData, authUser.email, authUser.displayName)
             );
           } else {
-            setStaffMember(null);
+            setStaffMember(
+              resolveStaffMemberFromAuth(null, roleData, authUser.email, authUser.displayName)
+            );
           }
         } catch (error) {
           console.error("Error fetching staff member:", error);

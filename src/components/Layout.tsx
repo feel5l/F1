@@ -14,7 +14,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { filterNavItemsByRole, getRoleLabel, NavItem } from '../lib/rbac';
+import { filterNavItemsByRole, getRoleLabel, resolveCurrentRole, NavItem } from '../lib/rbac';
 import { AppRole } from '../types';
 
 type NavItemWithIcon = NavItem & { icon: React.ComponentType<{ className?: string }> };
@@ -43,7 +43,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
   ];
 
-  const currentRole: AppRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+  const currentRole: AppRole = resolveCurrentRole(staffMember?.appRole, isAdmin);
 
   const visibleNavItems = filterNavItemsByRole(navItems, currentRole);
 

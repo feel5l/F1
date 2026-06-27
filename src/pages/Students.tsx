@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
 import { detectStudentCsvStartIndex, parseStudentCsvRow } from '../lib/studentImport';
+import { filterStudentsBySearchAndClass } from '../lib/studentFilter';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -201,11 +202,7 @@ export default function Students() {
     });
   };
 
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase());
-    const matchesClass = classFilter === 'all' || s.classId === classFilter;
-    return matchesSearch && matchesClass;
-  });
+  const filteredStudents = filterStudentsBySearchAndClass(students, search, classFilter);
 
   return (
     <div className="space-y-6">
