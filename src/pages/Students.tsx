@@ -13,6 +13,8 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { detectStudentCsvStartIndex, parseStudentCsvRow } from '../lib/studentImport';
+import { filterStudentsBySearchAndClass } from '../lib/studentFilter';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -160,26 +162,24 @@ export default function Students() {
       complete: async (results) => {
         try {
           const data = results.data as string[][];
-          // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
-          
+          const startIndex = detectStudentCsvStartIndex(data[0]?.[0]);
+
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
-            const row = data[i];
-            const name = row[0]?.trim();
-            if (name) {
-              const selectedClass = classes.find(c => c.id === importClassId);
-              await addDoc(collection(db, 'students'), {
-                fullName: name,
-                classId: importClassId,
-                className: selectedClass?.name || '',
-                guardianName: row[1]?.trim() || '',
-                guardianPhone: row[2]?.trim() || '',
-                parentEmail: row[3]?.trim() || '',
-                isActive: true,
-              });
-              count++;
-            }
+            const parsed = parseStudentCsvRow(data[i]);
+            if (!parsed) continue;
+
+            const selectedClass = classes.find(c => c.id === importClassId);
+            await addDoc(collection(db, 'students'), {
+              fullName: parsed.name,
+              classId: importClassId,
+              className: selectedClass?.name || '',
+              guardianName: parsed.guardianName,
+              guardianPhone: parsed.guardianPhone,
+              parentEmail: parsed.parentEmail,
+              isActive: true,
+            });
+            count++;
           }
           
           toast.success(`تم استيراد ${count} طالباً بنجاح`);
@@ -202,11 +202,7 @@ export default function Students() {
     });
   };
 
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase());
-    const matchesClass = classFilter === 'all' || s.classId === classFilter;
-    return matchesSearch && matchesClass;
-  });
+  const filteredStudents = filterStudentsBySearchAndClass(students, search, classFilter);
 
   return (
     <div className="space-y-6">
