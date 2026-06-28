@@ -11,6 +11,7 @@ import {
   getVisibleNavPaths,
   normalizeLoginIdentifier,
   shouldBootstrapAdminRole,
+  shouldFallbackToGoogleRedirect,
 } from './auth';
 
 const sampleClasses: Class[] = [
@@ -50,6 +51,18 @@ describe('normalizeLoginIdentifier', () => {
 
   it('trims surrounding whitespace', () => {
     expect(normalizeLoginIdentifier('  zayd12345  ')).toBe('zayd12345@ghiabi.com');
+  });
+});
+
+describe('shouldFallbackToGoogleRedirect', () => {
+  it('falls back when the popup is blocked or closed', () => {
+    expect(shouldFallbackToGoogleRedirect('auth/popup-blocked')).toBe(true);
+    expect(shouldFallbackToGoogleRedirect('auth/popup-closed-by-user')).toBe(true);
+  });
+
+  it('does not fall back for other auth errors', () => {
+    expect(shouldFallbackToGoogleRedirect('auth/network-request-failed')).toBe(false);
+    expect(shouldFallbackToGoogleRedirect(undefined)).toBe(false);
   });
 });
 

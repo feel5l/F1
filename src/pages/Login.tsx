@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GoogleAuthProvider, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { normalizeLoginIdentifier } from '../lib/auth';
+import { normalizeLoginIdentifier, shouldFallbackToGoogleRedirect } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +48,7 @@ export default function Login() {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
-      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+      if (shouldFallbackToGoogleRedirect(error?.code)) {
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
         return;

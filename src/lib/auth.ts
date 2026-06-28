@@ -3,6 +3,11 @@ import { AppRole, Class, StaffMember } from '../types';
 export const GHIABI_EMAIL_DOMAIN = 'ghiabi.com';
 export const BOOTSTRAP_ADMIN_EMAIL = 'alzaem3000@gmail.com';
 
+export const GOOGLE_POPUP_FALLBACK_ERRORS = new Set([
+  'auth/popup-blocked',
+  'auth/popup-closed-by-user',
+]);
+
 export const NAV_ITEMS = [
   { name: 'لوحة التحكم', path: '/', roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] as AppRole[] },
   { name: 'إدارة الطلاب', path: '/students', roles: ['ADMIN', 'TEACHER_LEADER'] as AppRole[] },
@@ -29,6 +34,11 @@ export function isBootstrapAdminEmail(email: string): boolean {
 /** Whether the client should seed the bootstrap admin role document. */
 export function shouldBootstrapAdminRole(email: string, existingRole?: string | null): boolean {
   return isBootstrapAdminEmail(email) && !existingRole;
+}
+
+/** Whether Google sign-in should fall back to redirect after a popup failure. */
+export function shouldFallbackToGoogleRedirect(errorCode?: string): boolean {
+  return !!errorCode && GOOGLE_POPUP_FALLBACK_ERRORS.has(errorCode);
 }
 
 export function getRoleFlags(appRole?: AppRole) {
