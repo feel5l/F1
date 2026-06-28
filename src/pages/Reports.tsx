@@ -26,6 +26,8 @@ import {
   Pie
 } from 'recharts';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
+import { filterClassesForUser } from '../lib/auth';
+import { calculateReportAttendanceRate, countAttendanceStatuses } from '../lib/attendance';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -60,11 +62,10 @@ export default function Reports() {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         
-        if (isAdmin) {
-          setClasses(classList);
-        } else {
-          setClasses(classList.filter(c => c.teacherEmail === user?.email));
-        }
+        setClasses(filterClassesForUser(classList, {
+          isAdmin,
+          userEmail: user?.email,
+        }));
       } catch (err) {
         console.error(err);
       }
@@ -125,15 +126,17 @@ export default function Reports() {
 
       setLogs(logsData);
 
-      // Calculate Stats
-      const total = logsData.length;
-      const present = logsData.filter(l => l.status === 'حاضر').length;
-      const absent = logsData.filter(l => l.status === 'غائب').length;
-      const late = logsData.filter(l => l.status === 'متأخر').length;
-      const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
+      const counts = countAttendanceStatuses(logsData.map((log) => log.status));
+      const rate = calculateReportAttendanceRate(counts);
 
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      setStats({
+        total: counts.total,
+        present: counts.present,
+        absent: counts.absent,
+        late: counts.late,
+        excused: counts.excused,
+        rate,
+      });
 
     } catch (err) {
       console.error(err);
