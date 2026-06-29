@@ -4,7 +4,7 @@ import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
-import { getRoleFlags, shouldBootstrapAdminRole } from './auth';
+import { getRoleFlags, shouldBootstrapAdminRole, mergeStaffWithRole, createStaffFromRole } from './auth';
 
 interface AuthContextType {
   user: User | null;
@@ -49,22 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (!querySnapshot.empty) {
-            const data = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember;
-            // Overwrite appRole if present in roles collection
-            if (roleData && roleData.role) {
-              data.appRole = roleData.role as AppRole;
-            }
+            const data = mergeStaffWithRole(
+              { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember,
+              roleData,
+            );
             setStaffMember(data);
           } else if (roleData && roleData.role) {
-            // In case user is in roles but not yet in staff (safety fallback)
-            setStaffMember({
-              fullName: authUser.displayName || 'مستخدم جديد',
-              email: authUser.email,
-              phone: '',
-              role: 'موظف',
-              appRole: roleData.role as AppRole,
-              specialization: ''
-            });
+            setStaffMember(
+              createStaffFromRole(authUser.email, authUser.displayName, roleData.role as AppRole),
+            );
           } else {
             setStaffMember(null);
           }

@@ -109,3 +109,31 @@ export function filterStaffBySearch(staff: StaffMember[], searchTerm: string): S
       member.nationalId.includes(searchTerm),
   );
 }
+
+/** Overwrite staff appRole when the roles collection has a canonical role. */
+export function mergeStaffWithRole(
+  staff: StaffMember,
+  roleData?: { role?: string } | null,
+): StaffMember {
+  if (roleData?.role) {
+    return { ...staff, appRole: roleData.role as AppRole };
+  }
+  return staff;
+}
+
+/** Build a staff profile when a user has a role but no staff document yet. */
+export function createStaffFromRole(
+  email: string,
+  displayName: string | null | undefined,
+  role: AppRole,
+): StaffMember {
+  return {
+    fullName: displayName || 'مستخدم جديد',
+    email,
+    phone: '',
+    role: 'موظف',
+    appRole: role,
+    specialization: '',
+    nationalId: '',
+  };
+}

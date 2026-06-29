@@ -3,12 +3,14 @@ import { Class, StaffMember } from '../types';
 import {
   BOOTSTRAP_ADMIN_EMAIL,
   canSeeAllClasses,
+  createStaffFromRole,
   filterClassesForUser,
   filterStaffBySearch,
   getEffectiveRole,
   getRoleFlags,
   getRoleLabel,
   getVisibleNavPaths,
+  mergeStaffWithRole,
   normalizeLoginIdentifier,
   shouldBootstrapAdminRole,
   shouldFallbackToGoogleRedirect,
@@ -169,5 +171,35 @@ describe('filterStaffBySearch', () => {
     expect(filterStaffBySearch(sampleStaff, 'رائد')).toHaveLength(1);
     expect(filterStaffBySearch(sampleStaff, '1023987314')).toHaveLength(1);
     expect(filterStaffBySearch(sampleStaff, 'missing')).toHaveLength(0);
+  });
+});
+
+describe('mergeStaffWithRole', () => {
+  it('overwrites appRole when roles collection has a canonical role', () => {
+    const staff = { ...sampleStaff[0], appRole: 'TEACHER' as const };
+    expect(mergeStaffWithRole(staff, { role: 'ADMIN' }).appRole).toBe('ADMIN');
+  });
+
+  it('preserves staff when no role override exists', () => {
+    expect(mergeStaffWithRole(sampleStaff[0], null)).toEqual(sampleStaff[0]);
+    expect(mergeStaffWithRole(sampleStaff[0], {})).toEqual(sampleStaff[0]);
+  });
+});
+
+describe('createStaffFromRole', () => {
+  it('builds a minimal staff profile from auth and role data', () => {
+    expect(createStaffFromRole('new@ghiabi.com', 'زيد', 'TEACHER')).toEqual({
+      fullName: 'زيد',
+      email: 'new@ghiabi.com',
+      phone: '',
+      role: 'موظف',
+      appRole: 'TEACHER',
+      specialization: '',
+      nationalId: '',
+    });
+  });
+
+  it('falls back to a default display name', () => {
+    expect(createStaffFromRole('new@ghiabi.com', null, 'SUPERVISOR').fullName).toBe('مستخدم جديد');
   });
 });
