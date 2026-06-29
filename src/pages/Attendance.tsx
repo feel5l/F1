@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
+import { countAttendanceStatuses } from '../lib/attendance';
+import { filterClassesForUser } from '../lib/auth';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -28,14 +30,11 @@ export default function Attendance() {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
-      const role = staffMember?.appRole;
-      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
-      
-      if (canSeeAll) {
-        setClasses(list);
-      } else {
-        setClasses(list.filter(c => c.teacherEmail === user?.email));
-      }
+      setClasses(filterClassesForUser(list, {
+        isAdmin,
+        appRole: staffMember?.appRole,
+        userEmail: user?.email,
+      }));
     };
     if (user) fetchClasses();
   }, [user, isAdmin]);
@@ -118,13 +117,7 @@ export default function Attendance() {
   };
 
   const attendanceList = Object.values(attendance) as { status: AttendanceStatus; note: string }[];
-
-  const stats = {
-    present: attendanceList.filter((a) => a.status === 'حاضر').length,
-    absent: attendanceList.filter((a) => a.status === 'غائب').length,
-    late: attendanceList.filter((a) => a.status === 'متأخر').length,
-    excused: attendanceList.filter((a) => a.status === 'بعذر').length,
-  };
+  const stats = countAttendanceStatuses(attendanceList.map((entry) => entry.status));
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GoogleAuthProvider, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { normalizeLoginIdentifier, shouldFallbackToGoogleRedirect } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,7 @@ export default function Login() {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
-      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+      if (shouldFallbackToGoogleRedirect(error?.code)) {
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
         return;
@@ -63,8 +64,7 @@ export default function Login() {
     setLoading(true);
     try {
       // Handle both email and username (zayd12345)
-      const normalizedEmail = email.trim();
-      const loginIdentifier = normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@ghiabi.com`;
+      const loginIdentifier = normalizeLoginIdentifier(email);
       await signInWithEmailAndPassword(auth, loginIdentifier, password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
@@ -85,7 +85,7 @@ export default function Login() {
     
     setResetLoading(true);
     try {
-      const fullEmail = normalizedResetEmail.includes('@') ? normalizedResetEmail : `${normalizedResetEmail}@ghiabi.com`;
+      const fullEmail = normalizeLoginIdentifier(normalizedResetEmail);
       await sendPasswordResetEmail(auth, fullEmail);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
       setIsResetOpen(false);
