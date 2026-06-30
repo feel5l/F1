@@ -129,3 +129,20 @@ export function filterClassesForAttendance(
   if (!userEmail) return [];
   return classes.filter((c) => c.teacherEmail === userEmail);
 }
+
+/**
+ * Filters staff list by name, role label, or national ID.
+ */
+export function filterStaffBySearch(
+  staff: StaffMember[],
+  searchTerm: string,
+): StaffMember[] {
+  const normalizedSearch = searchTerm.toLowerCase();
+
+  return staff.filter(
+    (member) =>
+      member.fullName.toLowerCase().includes(normalizedSearch) ||
+      (member.role || '').toLowerCase().includes(normalizedSearch) ||
+      member.nationalId.includes(searchTerm),
+  );
+}
