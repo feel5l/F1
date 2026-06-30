@@ -8,6 +8,7 @@ import {
   createStaffFromRole,
   filterClassesForReports,
   filterClassesForAttendance,
+  filterStaffBySearch,
   ADMIN_BOOTSTRAP_EMAIL,
 } from './rbac';
 import { AppRole, Class, StaffMember } from '../types';
@@ -164,5 +165,45 @@ describe('filterClassesForAttendance', () => {
   it('filters to assigned classes for plain teacher', () => {
     const filtered = filterClassesForAttendance(sampleClasses, 'TEACHER', false, 'teacher@ghiabi.com');
     expect(filtered.map((c) => c.id)).toEqual(['c1']);
+  });
+});
+
+describe('filterStaffBySearch', () => {
+  const staff: StaffMember[] = [
+    {
+      fullName: 'أحمد محمد',
+      nationalId: '1234567890',
+      phone: '050',
+      role: 'معلم',
+      appRole: 'TEACHER',
+      specialization: 'رياضيات',
+      email: 'a@ghiabi.com',
+    },
+    {
+      fullName: 'سارة علي',
+      nationalId: '9876543210',
+      phone: '051',
+      role: 'مشرف',
+      appRole: 'SUPERVISOR',
+      specialization: '',
+      email: 's@ghiabi.com',
+    },
+  ];
+
+  it('matches by full name (case-insensitive)', () => {
+    expect(filterStaffBySearch(staff, 'أحمد').map((m) => m.email)).toEqual(['a@ghiabi.com']);
+    expect(filterStaffBySearch(staff, 'سارة').map((m) => m.email)).toEqual(['s@ghiabi.com']);
+  });
+
+  it('matches by role label', () => {
+    expect(filterStaffBySearch(staff, 'مشرف').map((m) => m.email)).toEqual(['s@ghiabi.com']);
+  });
+
+  it('matches by national ID', () => {
+    expect(filterStaffBySearch(staff, '1234567890').map((m) => m.email)).toEqual(['a@ghiabi.com']);
+  });
+
+  it('returns all staff for empty search', () => {
+    expect(filterStaffBySearch(staff, '')).toHaveLength(2);
   });
 });
