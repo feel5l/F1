@@ -22,12 +22,37 @@ export interface TrendDataPoint {
   بعذر: number;
 }
 
+export interface DashboardStats {
+  absentToday: number;
+  lateToday: number;
+  attendanceRate: number;
+}
+
 type LogWithDate = Pick<AttendanceLog, 'status'> & { timestamp: { toDate(): Date } };
 
 /**
  * Computes attendance counts and discipline rate from logs.
  * Rate = (present + late + excused) / total * 100, rounded.
  */
+/**
+ * Computes dashboard KPIs from today's logs and enrolled student count.
+ * Rate = (present + late) / totalStudents * 100, rounded — matches Dashboard page.
+ */
+export function computeDashboardStats(
+  logs: Pick<AttendanceLog, 'status'>[],
+  totalStudents: number
+): DashboardStats {
+  const absentToday = logs.filter((l) => l.status === 'غائب').length;
+  const lateToday = logs.filter((l) => l.status === 'متأخر').length;
+  const presentCount = logs.filter((l) => l.status === 'حاضر').length;
+  const attendanceRate =
+    totalStudents > 0
+      ? Math.round(((presentCount + lateToday) / totalStudents) * 100)
+      : 0;
+
+  return { absentToday, lateToday, attendanceRate };
+}
+
 export function computeAttendanceStats(logs: Pick<AttendanceLog, 'status'>[]): AttendanceStats {
   const total = logs.length;
   const present = logs.filter((l) => l.status === 'حاضر').length;
