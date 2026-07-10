@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeAttendanceStats,
+  computeDashboardStats,
   filterLogsByDateRange,
   aggregateTrendByDate,
 } from './attendanceStats';
@@ -9,6 +10,41 @@ import { AttendanceStatus } from '../types';
 function makeLog(status: AttendanceStatus, date: Date) {
   return { status, timestamp: { toDate: () => date } };
 }
+
+describe('computeDashboardStats', () => {
+  it('computes absent, late, and attendance rate against enrolled students', () => {
+    const logs = [
+      { status: 'حاضر' as const },
+      { status: 'حاضر' as const },
+      { status: 'متأخر' as const },
+      { status: 'غائب' as const },
+      { status: 'بعذر' as const },
+    ];
+
+    expect(computeDashboardStats(logs, 10)).toEqual({
+      absentToday: 1,
+      lateToday: 1,
+      attendanceRate: 30,
+    });
+  });
+
+  it('returns zero rate when no students are enrolled', () => {
+    expect(computeDashboardStats([{ status: 'حاضر' }], 0)).toEqual({
+      absentToday: 0,
+      lateToday: 0,
+      attendanceRate: 0,
+    });
+  });
+
+  it('excludes excused absences from attendance rate numerator', () => {
+    const logs = [{ status: 'بعذر' as const }, { status: 'غائب' as const }];
+    expect(computeDashboardStats(logs, 5)).toEqual({
+      absentToday: 1,
+      lateToday: 0,
+      attendanceRate: 0,
+    });
+  });
+});
 
 describe('computeAttendanceStats', () => {
   it('counts statuses and computes discipline rate', () => {
