@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { filterNavItemsByRole, getRoleLabel, NavItem } from '../lib/rbac';
 import { auth } from '../lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +15,6 @@ import {
   Menu,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { filterNavItemsByRole, getRoleLabel, NavItem } from '../lib/rbac';
 import { AppRole } from '../types';
 
 type NavItemWithIcon = NavItem & { icon: React.ComponentType<{ className?: string }> };

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeAttendanceStats,
+  computeDashboardStats,
   filterLogsByDateRange,
   aggregateTrendByDate,
 } from './attendanceStats';
@@ -39,6 +40,47 @@ describe('computeAttendanceStats', () => {
       excused: 0,
       rate: 0,
     });
+  });
+});
+
+describe('computeDashboardStats', () => {
+  it('counts today absences/late and computes attendance rate from enrollment', () => {
+    const logs = [
+      { status: 'حاضر' as const },
+      { status: 'حاضر' as const },
+      { status: 'متأخر' as const },
+      { status: 'غائب' as const },
+      { status: 'بعذر' as const },
+    ];
+
+    expect(computeDashboardStats(logs, 10)).toEqual({
+      totalStudents: 10,
+      absentToday: 1,
+      lateToday: 1,
+      attendanceRate: 30,
+    });
+  });
+
+  it('returns zero attendance rate when there are no enrolled students', () => {
+    const logs = [{ status: 'حاضر' as const }];
+
+    expect(computeDashboardStats(logs, 0)).toEqual({
+      totalStudents: 0,
+      absentToday: 0,
+      lateToday: 0,
+      attendanceRate: 0,
+    });
+  });
+
+  it('rounds attendance rate to the nearest whole percent', () => {
+    const logs = [
+      { status: 'حاضر' as const },
+      { status: 'متأخر' as const },
+      { status: 'متأخر' as const },
+    ];
+
+    expect(computeDashboardStats(logs, 3).attendanceRate).toBe(100);
+    expect(computeDashboardStats(logs, 7).attendanceRate).toBe(43);
   });
 });
 
