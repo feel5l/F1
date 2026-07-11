@@ -87,3 +87,34 @@ export function aggregateTrendByDate(logs: LogWithDate[]): TrendDataPoint[] {
 
   return Object.values(daily).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 }
+
+export interface DashboardStats {
+  totalStudents: number;
+  absentToday: number;
+  lateToday: number;
+  attendanceRate: number;
+}
+
+/**
+ * Computes dashboard KPIs from today's logs and enrolled student count.
+ * Attendance rate = (present + late) / totalStudents * 100, rounded.
+ */
+export function computeDashboardStats(
+  logs: Pick<AttendanceLog, 'status'>[],
+  totalStudents: number,
+): DashboardStats {
+  const absentToday = logs.filter((l) => l.status === 'غائب').length;
+  const lateToday = logs.filter((l) => l.status === 'متأخر').length;
+  const presentCount = logs.filter((l) => l.status === 'حاضر').length;
+  const attendanceRate =
+    totalStudents > 0
+      ? Math.round(((presentCount + lateToday) / totalStudents) * 100)
+      : 0;
+
+  return {
+    totalStudents,
+    absentToday,
+    lateToday,
+    attendanceRate,
+  };
+}
