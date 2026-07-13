@@ -28,6 +28,25 @@ type LogWithDate = Pick<AttendanceLog, 'status'> & { timestamp: { toDate(): Date
  * Computes attendance counts and discipline rate from logs.
  * Rate = (present + late + excused) / total * 100, rounded.
  */
+export type SessionStatusCounts = Pick<
+  AttendanceStats,
+  'present' | 'absent' | 'late' | 'excused'
+>;
+
+/**
+ * Counts attendance statuses for an in-progress session form.
+ */
+export function countSessionStatuses(
+  records: Pick<AttendanceLog, 'status'>[],
+): SessionStatusCounts {
+  return {
+    present: records.filter((record) => record.status === 'حاضر').length,
+    absent: records.filter((record) => record.status === 'غائب').length,
+    late: records.filter((record) => record.status === 'متأخر').length,
+    excused: records.filter((record) => record.status === 'بعذر').length,
+  };
+}
+
 export function computeAttendanceStats(logs: Pick<AttendanceLog, 'status'>[]): AttendanceStats {
   const total = logs.length;
   const present = logs.filter((l) => l.status === 'حاضر').length;

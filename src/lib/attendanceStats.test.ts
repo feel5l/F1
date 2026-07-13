@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeAttendanceStats,
   computeDashboardStats,
+  countSessionStatuses,
   filterLogsByDateRange,
   aggregateTrendByDate,
 } from './attendanceStats';
@@ -10,6 +11,34 @@ import { AttendanceStatus } from '../types';
 function makeLog(status: AttendanceStatus, date: Date) {
   return { status, timestamp: { toDate: () => date } };
 }
+
+describe('countSessionStatuses', () => {
+  it('counts each status in a session draft', () => {
+    const records = [
+      { status: 'حاضر' as const },
+      { status: 'حاضر' as const },
+      { status: 'غائب' as const },
+      { status: 'متأخر' as const },
+      { status: 'بعذر' as const },
+    ];
+
+    expect(countSessionStatuses(records)).toEqual({
+      present: 2,
+      absent: 1,
+      late: 1,
+      excused: 1,
+    });
+  });
+
+  it('returns zeros for an empty session', () => {
+    expect(countSessionStatuses([])).toEqual({
+      present: 0,
+      absent: 0,
+      late: 0,
+      excused: 0,
+    });
+  });
+});
 
 describe('computeAttendanceStats', () => {
   it('counts statuses and computes discipline rate', () => {
