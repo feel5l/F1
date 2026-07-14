@@ -3,6 +3,7 @@ import {
   buildAbsenceNotificationMessage,
   buildWhatsAppUrl,
   sanitizePhoneNumber,
+  canNotifyGuardian,
 } from './notifications';
 
 describe('sanitizePhoneNumber', () => {
@@ -28,5 +29,17 @@ describe('buildWhatsAppUrl', () => {
 
     expect(url.startsWith('https://wa.me/0501234567?text=')).toBe(true);
     expect(url).toContain(encodeURIComponent('مرحباً'));
+  });
+});
+
+describe('canNotifyGuardian', () => {
+  it('returns true when guardian phone is present', () => {
+    expect(canNotifyGuardian({ guardianPhone: '0501234567' })).toBe(true);
+  });
+
+  it('returns false for missing, empty, or whitespace-only phone', () => {
+    expect(canNotifyGuardian(undefined)).toBe(false);
+    expect(canNotifyGuardian({ guardianPhone: '' })).toBe(false);
+    expect(canNotifyGuardian({ guardianPhone: '   ' })).toBe(false);
   });
 });

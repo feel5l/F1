@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
-import { countSessionStatuses } from '../lib/attendanceStats';
+import { countSessionStatuses, isAttendanceSubmissionReady } from '../lib/attendanceStats';
 import { filterClassesForAttendance } from '../lib/rbac';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
@@ -72,7 +72,7 @@ export default function Attendance() {
   };
 
   const submitAttendance = async () => {
-    if (!selectedClass || !subject || !user?.email) {
+    if (!isAttendanceSubmissionReady(selectedClass, subject, user?.email)) {
       toast.error('يرجى ملء كافة البيانات');
       return;
     }

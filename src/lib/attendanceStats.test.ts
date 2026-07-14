@@ -5,6 +5,7 @@ import {
   countSessionStatuses,
   filterLogsByDateRange,
   aggregateTrendByDate,
+  isAttendanceSubmissionReady,
 } from './attendanceStats';
 import { AttendanceStatus } from '../types';
 
@@ -69,6 +70,23 @@ describe('computeAttendanceStats', () => {
       excused: 0,
       rate: 0,
     });
+  });
+});
+
+describe('isAttendanceSubmissionReady', () => {
+  it('requires class, non-empty subject, and teacher email', () => {
+    expect(
+      isAttendanceSubmissionReady('class-1', 'رياضيات', 'teacher@ghiabi.com'),
+    ).toBe(true);
+  });
+
+  it('rejects whitespace-only subject', () => {
+    expect(isAttendanceSubmissionReady('class-1', '   ', 'teacher@ghiabi.com')).toBe(false);
+  });
+
+  it('rejects missing class or user email', () => {
+    expect(isAttendanceSubmissionReady('', 'رياضيات', 'teacher@ghiabi.com')).toBe(false);
+    expect(isAttendanceSubmissionReady('class-1', 'رياضيات', null)).toBe(false);
   });
 });
 

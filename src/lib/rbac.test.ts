@@ -9,6 +9,7 @@ import {
   filterClassesForReports,
   filterClassesForAttendance,
   filterStaffBySearch,
+  buildRoleSyncPayload,
   ADMIN_BOOTSTRAP_EMAIL,
 } from './rbac';
 import { AppRole, Class, StaffMember } from '../types';
@@ -205,5 +206,15 @@ describe('filterStaffBySearch', () => {
 
   it('returns all staff for empty search', () => {
     expect(filterStaffBySearch(staff, '')).toHaveLength(2);
+  });
+});
+
+describe('buildRoleSyncPayload', () => {
+  it('includes role and updatedAt for roles collection sync', () => {
+    const updatedAt = new Date('2026-07-14T10:00:00Z');
+    expect(buildRoleSyncPayload('TEACHER_LEADER', updatedAt)).toEqual({
+      role: 'TEACHER_LEADER',
+      updatedAt,
+    });
   });
 });

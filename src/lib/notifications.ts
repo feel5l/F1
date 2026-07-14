@@ -13,3 +13,10 @@ export function buildWhatsAppUrl(phone: string, message: string): string {
   const cleanPhone = sanitizePhoneNumber(phone);
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
+
+/** Whether a guardian can receive a WhatsApp absence notification. */
+export function canNotifyGuardian(
+  student?: { guardianPhone?: string } | null,
+): student is { guardianPhone: string } {
+  return Boolean(student?.guardianPhone?.trim());
+}

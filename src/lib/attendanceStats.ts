@@ -118,6 +118,17 @@ export interface DashboardStats {
  * Computes dashboard KPIs from today's logs and enrolled student count.
  * Attendance rate = (present + late) / totalStudents * 100, rounded.
  */
+/**
+ * Whether required attendance session fields are present before submit.
+ */
+export function isAttendanceSubmissionReady(
+  selectedClass: string,
+  subject: string,
+  userEmail?: string | null,
+): boolean {
+  return Boolean(selectedClass && subject.trim() && userEmail);
+}
+
 export function computeDashboardStats(
   logs: Pick<AttendanceLog, 'status'>[],
   totalStudents: number,

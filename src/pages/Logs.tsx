@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import {
   buildAbsenceNotificationMessage,
   buildWhatsAppUrl,
+  canNotifyGuardian,
 } from '../lib/notifications';
 
 export default function Logs() {
@@ -72,7 +73,7 @@ export default function Logs() {
   }, [user?.email, isAdmin]);
 
   const sendWhatsAppNotification = (log: AttendanceLog, student?: Student) => {
-    if (!student?.guardianPhone) {
+    if (!canNotifyGuardian(student)) {
       toast.error('رقم ولي الأمر غير متوفر لهذا الطالب');
       return;
     }
@@ -139,7 +140,7 @@ export default function Logs() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          disabled={!student?.guardianPhone}
+                          disabled={!canNotifyGuardian(student)}
                           onClick={() => sendWhatsAppNotification(log, student)}
                           className="text-green-600 hover:text-green-700 hover:bg-green-50"
                         >

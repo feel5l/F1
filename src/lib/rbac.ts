@@ -133,6 +133,16 @@ export function filterClassesForAttendance(
 /**
  * Filters staff list by name, role label, or national ID.
  */
+/**
+ * Builds the roles-collection payload kept in sync with staff appRole updates.
+ */
+export function buildRoleSyncPayload(
+  role: AppRole,
+  updatedAt: Date = new Date(),
+): { role: AppRole; updatedAt: Date } {
+  return { role, updatedAt };
+}
+
 export function filterStaffBySearch(
   staff: StaffMember[],
   searchTerm: string,
