@@ -17,6 +17,7 @@ import {
   buildWhatsAppUrl,
   canNotifyGuardian,
 } from '../lib/notifications';
+import { shouldScopeLogsToTeacher } from '../lib/rbac';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -31,15 +32,15 @@ export default function Logs() {
       setLoading(true);
       try {
         let logsQuery;
-        if (isAdmin) {
-          logsQuery = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'), limit(100));
-        } else {
+        if (shouldScopeLogsToTeacher(isAdmin)) {
           logsQuery = query(
             collection(db, 'attendanceLogs'),
             where('teacherEmail', '==', user?.email),
             orderBy('timestamp', 'desc'),
             limit(100)
           );
+        } else {
+          logsQuery = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'), limit(100));
         }
         
         const logsSnap = await getDocs(logsQuery);

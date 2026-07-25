@@ -119,6 +119,22 @@ export function filterClassesForReports(
 }
 
 /**
+ * Returns teacher email for scoping attendance/log queries, or undefined when unscoped (admin).
+ */
+export function resolveTeacherEmailFilter(
+  isAdmin: boolean,
+  userEmail?: string | null
+): string | undefined {
+  if (isAdmin) return undefined;
+  return userEmail ?? undefined;
+}
+
+/** Whether attendance log queries should be scoped to the signed-in teacher. */
+export function shouldScopeLogsToTeacher(isAdmin: boolean): boolean {
+  return !isAdmin;
+}
+
+/**
  * Filters classes visible on the attendance page based on role.
  */
 export function filterClassesForAttendance(
