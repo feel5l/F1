@@ -11,6 +11,8 @@ import {
   filterStaffBySearch,
   buildRoleSyncPayload,
   buildBootstrapAdminRolePayload,
+  shouldScopeLogsToTeacher,
+  resolveTeacherEmailFilter,
   ADMIN_BOOTSTRAP_EMAIL,
 } from './rbac';
 import { AppRole, Class, StaffMember } from '../types';
@@ -216,6 +218,34 @@ describe('filterStaffBySearch', () => {
 
   it('returns all staff for empty search', () => {
     expect(filterStaffBySearch(staff, '')).toHaveLength(2);
+  });
+});
+
+describe('shouldScopeLogsToTeacher', () => {
+  it('scopes logs for non-admin teachers', () => {
+    expect(shouldScopeLogsToTeacher(false)).toBe(true);
+  });
+
+  it('does not scope logs for admins', () => {
+    expect(shouldScopeLogsToTeacher(true)).toBe(false);
+  });
+});
+
+describe('resolveTeacherEmailFilter', () => {
+  it('returns null for admins', () => {
+    expect(resolveTeacherEmailFilter(true, 'teacher@ghiabi.com')).toBeNull();
+  });
+
+  it('returns teacher email for non-admins with email', () => {
+    expect(resolveTeacherEmailFilter(false, 'teacher@ghiabi.com')).toBe(
+      'teacher@ghiabi.com',
+    );
+  });
+
+  it('returns null for non-admins without email', () => {
+    expect(resolveTeacherEmailFilter(false, null)).toBeNull();
+    expect(resolveTeacherEmailFilter(false, undefined)).toBeNull();
+    expect(resolveTeacherEmailFilter(false, '')).toBeNull();
   });
 });
 
