@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserMinus, Clock, CheckCircle2 } from 'lucide-react';
 import { Student, AttendanceLog } from '../types';
 import { computeDashboardStats } from '../lib/attendanceStats';
+import { resolveTeacherEmailFilter } from '../lib/rbac';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -45,8 +46,9 @@ export default function Dashboard() {
 
         // 2. Logs for today
         let queryConstraints = [where('timestamp', '>=', todayTS)];
-        if (!isAdmin && user?.email) {
-          queryConstraints.push(where('teacherEmail', '==', user.email));
+        const teacherEmailFilter = resolveTeacherEmailFilter(isAdmin, user?.email);
+        if (teacherEmailFilter) {
+          queryConstraints.push(where('teacherEmail', '==', teacherEmailFilter));
         }
 
         const logsQuery = query(
