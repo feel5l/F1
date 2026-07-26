@@ -27,7 +27,7 @@ import {
   Pie
 } from 'recharts';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
-import { filterClassesForReports } from '../lib/rbac';
+import { filterClassesForReports, resolveTeacherEmailFilter } from '../lib/rbac';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -90,9 +90,9 @@ export default function Reports() {
     try {
       let q = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'));
 
-      // Role based filtering
-      if (!isAdmin && user?.email) {
-        q = query(q, where('teacherEmail', '==', user.email));
+      const teacherEmailFilter = resolveTeacherEmailFilter(isAdmin, user?.email);
+      if (teacherEmailFilter) {
+        q = query(q, where('teacherEmail', '==', teacherEmailFilter));
       }
 
       // Filter by Class

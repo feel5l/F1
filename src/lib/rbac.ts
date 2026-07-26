@@ -151,6 +151,26 @@ export function buildRoleSyncPayload(
   return { role, updatedAt };
 }
 
+/**
+ * Whether attendance logs should be scoped to the current teacher (Logs page).
+ * Non-admins always scope, even when email is missing.
+ */
+export function shouldScopeLogsToTeacher(isAdmin: boolean): boolean {
+  return !isAdmin;
+}
+
+/**
+ * Resolves teacherEmail filter for dashboard/reports queries.
+ * Returns null when the caller should not add a teacherEmail constraint.
+ */
+export function resolveTeacherEmailFilter(
+  isAdmin: boolean,
+  userEmail?: string | null,
+): string | null {
+  if (isAdmin || !userEmail) return null;
+  return userEmail;
+}
+
 export function filterStaffBySearch(
   staff: StaffMember[],
   searchTerm: string,
