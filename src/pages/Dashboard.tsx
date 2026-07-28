@@ -5,6 +5,8 @@ import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserMinus, Clock, CheckCircle2 } from 'lucide-react';
 import { Student, AttendanceLog } from '../types';
+import { computeDashboardStats } from '../lib/attendanceStats';
+import { resolveTeacherEmailFilter } from '../lib/rbac';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -44,8 +46,9 @@ export default function Dashboard() {
 
         // 2. Logs for today
         let queryConstraints = [where('timestamp', '>=', todayTS)];
-        if (!isAdmin && user?.email) {
-          queryConstraints.push(where('teacherEmail', '==', user.email));
+        const teacherEmailFilter = resolveTeacherEmailFilter(isAdmin, user?.email);
+        if (teacherEmailFilter) {
+          queryConstraints.push(where('teacherEmail', '==', teacherEmailFilter));
         }
 
         const logsQuery = query(
@@ -55,18 +58,7 @@ export default function Dashboard() {
         const logsSnap = await getDocs(logsQuery);
         const logs = logsSnap.docs.map(doc => doc.data() as AttendanceLog);
 
-        const absentCount = logs.filter(l => l.status === 'غائب').length;
-        const lateCount = logs.filter(l => l.status === 'متأخر').length;
-        const presentCount = logs.filter(l => l.status === 'حاضر').length;
-
-        const rate = totalStudents > 0 ? ((presentCount + lateCount) / totalStudents) * 100 : 0;
-
-        setStats({
-          totalStudents,
-          absentToday: absentCount,
-          lateToday: lateCount,
-          attendanceRate: Math.round(rate),
-        });
+        setStats(computeDashboardStats(logs, totalStudents));
       } catch (err) {
         console.error(err);
       } finally {
