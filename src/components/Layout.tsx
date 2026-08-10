@@ -14,6 +14,8 @@ import {
   Menu,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { getRoleLabel, filterNavItemsByRole } from '../lib/rbac';
+import { AppRole } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,22 +41,9 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
   ];
 
-  const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+  const currentRole: AppRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
 
-  const visibleNavItems = navItems.filter(item => 
-    item.roles.includes(currentRole as any)
-  );
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'مدير نظام';
-      case 'TEACHER': return 'معلم';
-      case 'TEACHER_LEADER': return 'رائد نشاط / رئيس قسم';
-      case 'ATTENDANCE_OFFICER': return 'مسؤول غياب';
-      case 'SUPERVISOR': return 'مشرف';
-      default: return 'موظف';
-    }
-  };
+  const visibleNavItems = filterNavItemsByRole(navItems, currentRole);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4 px-3">
