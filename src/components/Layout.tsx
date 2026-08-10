@@ -21,6 +21,13 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+type NavItemWithIcon = {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles: AppRole[];
+};
+
 export default function Layout({ children }: LayoutProps) {
   const { user, isAdmin, staffMember } = useAuth();
   const navigate = useNavigate();
@@ -31,7 +38,7 @@ export default function Layout({ children }: LayoutProps) {
     navigate('/login');
   };
 
-  const navItems = [
+  const navItems: NavItemWithIcon[] = [
     { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
     { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
     { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
