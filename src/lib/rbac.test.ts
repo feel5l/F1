@@ -42,6 +42,14 @@ describe('resolveRoleFlags', () => {
       isSupervisor: false,
     });
   });
+
+  it('identifies supervisor without teacher privileges', () => {
+    expect(resolveRoleFlags('SUPERVISOR')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: true,
+    });
+  });
 });
 
 describe('getRoleLabel', () => {
@@ -146,6 +154,12 @@ describe('filterClassesForReports', () => {
 });
 
 describe('filterClassesForAttendance', () => {
+  it('returns all classes for admin regardless of app role', () => {
+    expect(
+      filterClassesForAttendance(sampleClasses, 'TEACHER', true, 'teacher@ghiabi.com')
+    ).toEqual(sampleClasses);
+  });
+
   it('returns all classes for attendance officer', () => {
     expect(
       filterClassesForAttendance(sampleClasses, 'ATTENDANCE_OFFICER', false, 'officer@ghiabi.com')

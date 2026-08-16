@@ -72,6 +72,16 @@ describe('filterLogsByDateRange', () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0].status).toBe('غائب');
   });
+
+  it('filters to current calendar month', () => {
+    const logs = [
+      makeLog('حاضر', new Date('2026-05-31T23:59:00')),
+      makeLog('غائب', new Date('2026-06-01T00:00:00')),
+      makeLog('متأخر', new Date('2026-06-06T08:00:00')),
+    ];
+    const filtered = filterLogsByDateRange(logs, 'month', now);
+    expect(filtered.map((l) => l.status)).toEqual(['غائب', 'متأخر']);
+  });
 });
 
 describe('aggregateTrendByDate', () => {
