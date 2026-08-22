@@ -6,6 +6,9 @@ import {
   shouldBootstrapAdmin,
   mergeStaffWithRole,
   createStaffFromRole,
+  applyAdminBootstrap,
+  resolveStaffMemberFromAuth,
+  resolveNavRole,
   filterClassesForReports,
   filterClassesForAttendance,
   ADMIN_BOOTSTRAP_EMAIL,
@@ -95,6 +98,22 @@ describe('shouldBootstrapAdmin', () => {
   });
 });
 
+describe('applyAdminBootstrap', () => {
+  it('returns ADMIN role for bootstrap email without existing role', () => {
+    expect(applyAdminBootstrap(ADMIN_BOOTSTRAP_EMAIL, null)).toEqual({ role: 'ADMIN' });
+  });
+
+  it('preserves existing role data for non-bootstrap users', () => {
+    const roleData = { role: 'TEACHER' as AppRole };
+    expect(applyAdminBootstrap('teacher@ghiabi.com', roleData)).toBe(roleData);
+  });
+
+  it('does not override an existing admin role document', () => {
+    const roleData = { role: 'ADMIN' as AppRole };
+    expect(applyAdminBootstrap(ADMIN_BOOTSTRAP_EMAIL, roleData)).toBe(roleData);
+  });
+});
+
 describe('mergeStaffWithRole', () => {
   const baseStaff: StaffMember = {
     fullName: 'Test',
@@ -114,6 +133,69 @@ describe('mergeStaffWithRole', () => {
 
   it('returns staff unchanged when no role data', () => {
     expect(mergeStaffWithRole(baseStaff, null)).toEqual(baseStaff);
+  });
+});
+
+describe('resolveStaffMemberFromAuth', () => {
+  const staffRecord: StaffMember = {
+    id: 's1',
+    fullName: 'Existing Staff',
+    nationalId: '123',
+    phone: '050',
+    role: 'معلم',
+    appRole: 'TEACHER',
+    specialization: 'Math',
+    email: 'teacher@ghiabi.com',
+  };
+
+  it('merges staff record with roles collection data', () => {
+    const resolved = resolveStaffMemberFromAuth({
+      staffRecord,
+      roleData: { role: 'ADMIN' },
+      email: 'teacher@ghiabi.com',
+      displayName: 'Teacher',
+    });
+    expect(resolved?.appRole).toBe('ADMIN');
+    expect(resolved?.fullName).toBe('Existing Staff');
+  });
+
+  it('creates fallback staff when only roles collection has data (Google login)', () => {
+    const resolved = resolveStaffMemberFromAuth({
+      staffRecord: null,
+      roleData: { role: 'ADMIN' },
+      email: ADMIN_BOOTSTRAP_EMAIL,
+      displayName: 'Admin User',
+    });
+    expect(resolved).toMatchObject({
+      fullName: 'Admin User',
+      email: ADMIN_BOOTSTRAP_EMAIL,
+      appRole: 'ADMIN',
+    });
+  });
+
+  it('returns null when neither staff nor role exists', () => {
+    expect(
+      resolveStaffMemberFromAuth({
+        staffRecord: null,
+        roleData: null,
+        email: 'unknown@ghiabi.com',
+        displayName: null,
+      })
+    ).toBeNull();
+  });
+});
+
+describe('resolveNavRole', () => {
+  it('uses staff appRole when present', () => {
+    expect(resolveNavRole('SUPERVISOR', false)).toBe('SUPERVISOR');
+  });
+
+  it('falls back to ADMIN when isAdmin flag is set', () => {
+    expect(resolveNavRole(undefined, true)).toBe('ADMIN');
+  });
+
+  it('defaults to TEACHER when no role and not admin', () => {
+    expect(resolveNavRole(undefined, false)).toBe('TEACHER');
   });
 });
 

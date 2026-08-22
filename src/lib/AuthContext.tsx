@@ -5,9 +5,8 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
 import {
-  shouldBootstrapAdmin,
-  mergeStaffWithRole,
-  createStaffFromRole,
+  applyAdminBootstrap,
+  resolveStaffMemberFromAuth,
   resolveRoleFlags,
 } from './rbac';
 
@@ -44,26 +43,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           const roleRef = doc(db, 'roles', authUser.email);
           const roleSnap = await getDoc(roleRef);
-          let roleData = roleSnap.exists() ? roleSnap.data() : null;
-          if (shouldBootstrapAdmin(authUser.email, roleData)) {
+          const existingRoleData = roleSnap.exists() ? roleSnap.data() : null;
+          const roleData = applyAdminBootstrap(authUser.email, existingRoleData);
+          if (roleData?.role === 'ADMIN' && !existingRoleData?.role) {
             await setDoc(roleRef, { role: 'ADMIN' as AppRole });
             toast.success('تم تفعيل صلاحيات المدير بنجاح في قاعدة البيانات');
-            roleData = { role: 'ADMIN' };
           }
 
-          if (!querySnapshot.empty) {
-            const data = mergeStaffWithRole(
-              { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember,
-              roleData
-            );
-            setStaffMember(data);
-          } else if (roleData && roleData.role) {
-            setStaffMember(
-              createStaffFromRole(authUser.email, authUser.displayName, roleData.role as AppRole)
-            );
-          } else {
-            setStaffMember(null);
-          }
+          const staffRecord = querySnapshot.empty
+            ? null
+            : ({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember);
+
+          setStaffMember(
+            resolveStaffMemberFromAuth({
+              staffRecord,
+              roleData,
+              email: authUser.email,
+              displayName: authUser.displayName,
+            })
+          );
         } catch (error) {
           console.error("Error fetching staff member:", error);
           setStaffMember(null);

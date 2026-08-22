@@ -111,6 +111,57 @@ export function filterClassesForReports(
 }
 
 /**
+ * Applies admin bootstrap when the designated email has no role document yet.
+ * Returns updated role data (with ADMIN) or the original role data unchanged.
+ */
+export function applyAdminBootstrap(
+  email: string,
+  roleData?: { role?: AppRole } | null
+): { role?: AppRole } | null {
+  if (shouldBootstrapAdmin(email, roleData)) {
+    return { role: 'ADMIN' };
+  }
+  return roleData ?? null;
+}
+
+export interface StaffResolutionInput {
+  staffRecord: StaffMember | null;
+  roleData: { role?: AppRole } | null;
+  email: string;
+  displayName?: string | null;
+}
+
+/**
+ * Resolves the effective staff member after auth, merging staff + roles collections.
+ * Used by AuthContext after Google login or email/password sign-in.
+ */
+export function resolveStaffMemberFromAuth(
+  input: StaffResolutionInput
+): StaffMember | null {
+  const { staffRecord, roleData, email, displayName } = input;
+
+  if (staffRecord) {
+    return mergeStaffWithRole(staffRecord, roleData);
+  }
+
+  if (roleData?.role) {
+    return createStaffFromRole(email, displayName, roleData.role);
+  }
+
+  return null;
+}
+
+/**
+ * Resolves the navigation role, falling back when appRole is missing.
+ */
+export function resolveNavRole(
+  staffAppRole: AppRole | undefined,
+  isAdmin: boolean
+): AppRole {
+  return staffAppRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+}
+
+/**
  * Filters classes visible on the attendance page based on role.
  */
 export function filterClassesForAttendance(
