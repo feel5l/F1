@@ -13,6 +13,7 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { detectCsvStartIndex } from '../services/csvImport';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -161,7 +162,7 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
+          const startIndex = detectCsvStartIndex(data[0]?.[0]);
           
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
