@@ -28,3 +28,13 @@ export function deriveRoleFlags(appRole?: AppRole): RoleFlags {
 export function isBootstrapAdminEmail(email: string): boolean {
   return email === BOOTSTRAP_ADMIN_EMAIL;
 }
+
+const GOOGLE_POPUP_FALLBACK_CODES = new Set([
+  'auth/popup-blocked',
+  'auth/popup-closed-by-user',
+]);
+
+/** Whether Google sign-in should fall back to redirect after a popup failure. */
+export function shouldFallbackToGoogleRedirect(errorCode: string | undefined): boolean {
+  return errorCode != null && GOOGLE_POPUP_FALLBACK_CODES.has(errorCode);
+}

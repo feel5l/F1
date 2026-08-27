@@ -3,6 +3,7 @@ import {
   normalizeSchoolEmail,
   deriveRoleFlags,
   isBootstrapAdminEmail,
+  shouldFallbackToGoogleRedirect,
   SCHOOL_EMAIL_DOMAIN,
   BOOTSTRAP_ADMIN_EMAIL,
 } from './auth';
@@ -59,5 +60,34 @@ describe('isBootstrapAdminEmail', () => {
     expect(isBootstrapAdminEmail(BOOTSTRAP_ADMIN_EMAIL)).toBe(true);
     expect(isBootstrapAdminEmail('other@gmail.com')).toBe(false);
     expect(isBootstrapAdminEmail('')).toBe(false);
+  });
+
+  it('does not treat legacy hardcoded admin emails as bootstrap', () => {
+    expect(isBootstrapAdminEmail('alzaem2002@gmail.com')).toBe(false);
+    expect(isBootstrapAdminEmail('zayd12345@ghiabi.com')).toBe(false);
+  });
+});
+
+describe('shouldFallbackToGoogleRedirect', () => {
+  it('returns true for popup-blocked and popup-closed errors', () => {
+    expect(shouldFallbackToGoogleRedirect('auth/popup-blocked')).toBe(true);
+    expect(shouldFallbackToGoogleRedirect('auth/popup-closed-by-user')).toBe(true);
+  });
+
+  it('returns false for other auth errors and undefined', () => {
+    expect(shouldFallbackToGoogleRedirect('auth/network-request-failed')).toBe(false);
+    expect(shouldFallbackToGoogleRedirect(undefined)).toBe(false);
+  });
+});
+
+describe('deriveRoleFlags regression', () => {
+  it('never grants admin from email alone — only explicit ADMIN appRole', () => {
+    const legacyEmails = ['alzaem2002@gmail.com', 'zayd12345@ghiabi.com', BOOTSTRAP_ADMIN_EMAIL];
+    for (const email of legacyEmails) {
+      void email;
+      expect(deriveRoleFlags(undefined).isAdmin).toBe(false);
+      expect(deriveRoleFlags('TEACHER').isAdmin).toBe(false);
+    }
+    expect(deriveRoleFlags('ADMIN').isAdmin).toBe(true);
   });
 });
