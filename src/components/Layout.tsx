@@ -14,6 +14,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { filterNavItemsForRole, getRoleLabel, resolveEffectiveRole } from '../services/navigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,31 +30,18 @@ export default function Layout({ children }: LayoutProps) {
     navigate('/login');
   };
 
-  const navItems = [
-    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
-    { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
-    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
-    { name: 'إدارة الفصول', path: '/classes', icon: School, roles: ['ADMIN'] },
-    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'] },
-    { name: 'سجل الغياب', path: '/logs', icon: History, roles: ['ADMIN', 'ATTENDANCE_OFFICER', 'TEACHER_LEADER'] },
-    { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
-  ];
+  const currentRole = resolveEffectiveRole(staffMember?.appRole, isAdmin);
 
-  const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+  const visibleNavItems = filterNavItemsForRole(currentRole);
 
-  const visibleNavItems = navItems.filter(item => 
-    item.roles.includes(currentRole as any)
-  );
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'مدير نظام';
-      case 'TEACHER': return 'معلم';
-      case 'TEACHER_LEADER': return 'رائد نشاط / رئيس قسم';
-      case 'ATTENDANCE_OFFICER': return 'مسؤول غياب';
-      case 'SUPERVISOR': return 'مشرف';
-      default: return 'موظف';
-    }
+  const navIcons: Record<string, typeof LayoutDashboard> = {
+    '/': LayoutDashboard,
+    '/students': Users,
+    '/staff': Users,
+    '/classes': School,
+    '/attendance': ClipboardCheck,
+    '/logs': History,
+    '/reports': BarChart3,
   };
 
   const SidebarContent = () => (
@@ -64,7 +52,7 @@ export default function Layout({ children }: LayoutProps) {
       </div>
       <nav className="flex-1 space-y-1">
         {visibleNavItems.map((item) => {
-          const Icon = item.icon;
+          const Icon = navIcons[item.path] ?? LayoutDashboard;
           const isActive = location.pathname === item.path;
           return (
             <Link
