@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
+import { normalizeSchoolEmail } from '../lib/identifiers';
 import {
   Dialog,
   DialogContent,
@@ -63,8 +64,7 @@ export default function Login() {
     setLoading(true);
     try {
       // Handle both email and username (zayd12345)
-      const normalizedEmail = email.trim();
-      const loginIdentifier = normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@ghiabi.com`;
+      const loginIdentifier = normalizeSchoolEmail(email);
       await signInWithEmailAndPassword(auth, loginIdentifier, password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
@@ -85,7 +85,7 @@ export default function Login() {
     
     setResetLoading(true);
     try {
-      const fullEmail = normalizedResetEmail.includes('@') ? normalizedResetEmail : `${normalizedResetEmail}@ghiabi.com`;
+      const fullEmail = normalizeSchoolEmail(normalizedResetEmail);
       await sendPasswordResetEmail(auth, fullEmail);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
       setIsResetOpen(false);
