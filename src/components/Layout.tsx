@@ -14,6 +14,8 @@ import {
   Menu,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { isNavItemVisible, resolveEffectiveRole } from '../lib/permissions';
+import { AppRole } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,10 +41,10 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
   ];
 
-  const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+  const currentRole = resolveEffectiveRole(staffMember?.appRole, isAdmin);
 
-  const visibleNavItems = navItems.filter(item => 
-    item.roles.includes(currentRole as any)
+  const visibleNavItems = navItems.filter((item) =>
+    isNavItemVisible(item.roles as AppRole[], currentRole)
   );
 
   const getRoleLabel = (role: string) => {
