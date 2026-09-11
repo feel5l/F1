@@ -38,3 +38,21 @@ export function isNavItemVisible(
 ): boolean {
   return allowedRoles.includes(currentRole as AppRole);
 }
+
+export interface ClassWithTeacher {
+  teacherEmail?: string;
+}
+
+/**
+ * Filters classes to those visible for the user's role.
+ * Privileged roles see all classes; teachers see only their homeroom.
+ */
+export function filterClassesForUser<T extends ClassWithTeacher>(
+  classes: T[],
+  appRole: AppRole | undefined,
+  isAdmin: boolean,
+  userEmail: string | undefined
+): T[] {
+  if (canViewAllClasses(appRole, isAdmin)) return classes;
+  return classes.filter((c) => c.teacherEmail === userEmail);
+}

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
-import { canViewAllClasses } from '../lib/permissions';
+import { filterClassesForUser } from '../lib/permissions';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -29,11 +29,7 @@ export default function Attendance() {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
-      if (canViewAllClasses(staffMember?.appRole, isAdmin)) {
-        setClasses(list);
-      } else {
-        setClasses(list.filter(c => c.teacherEmail === user?.email));
-      }
+      setClasses(filterClassesForUser(list, staffMember?.appRole, isAdmin, user?.email));
     };
     if (user) fetchClasses();
   }, [user, isAdmin]);
