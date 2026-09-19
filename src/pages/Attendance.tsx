@@ -12,6 +12,11 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
 import { filterClassesForUser } from '../lib/permissions';
+import {
+  validateAttendanceSubmission,
+  buildSessionPayload,
+  buildAttendanceLogPayload,
+} from '../lib/attendanceSubmit';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -69,33 +74,35 @@ export default function Attendance() {
   };
 
   const submitAttendance = async () => {
-    if (!selectedClass || !subject || !user?.email) {
-      toast.error('يرجى ملء كافة البيانات');
+    const validationError = validateAttendanceSubmission({
+      classId: selectedClass,
+      subject,
+      userEmail: user?.email,
+    });
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Create session
       const sessionData = {
+        ...buildSessionPayload(selectedClass, subject, period, user!.email!),
         date: serverTimestamp(),
-        period: parseInt(period),
-        subject,
-        classId: selectedClass,
-        teacherEmail: user.email,
       };
       const sessionRef = await addDoc(collection(db, 'sessions'), sessionData);
 
-      // 2. Create logs
       const logPromises = Object.entries(attendance).map(([studentId, d]) => {
         const data = d as { status: AttendanceStatus; note: string };
         return addDoc(collection(db, 'attendanceLogs'), {
-          studentId,
-          sessionId: sessionRef.id,
-          classId: selectedClass,
-          teacherEmail: user.email,
-          status: data.status,
-          note: data.note,
+          ...buildAttendanceLogPayload(
+            studentId,
+            sessionRef.id,
+            selectedClass,
+            user!.email!,
+            data.status,
+            data.note
+          ),
           timestamp: serverTimestamp(),
         });
       });
