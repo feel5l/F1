@@ -11,6 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
+import { filterClassesForUser } from '../lib/permissions';
+import {
+  validateAttendanceSubmission,
+  buildSessionPayload,
+  buildAttendanceLogPayload,
+} from '../lib/attendanceSubmit';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -28,14 +34,7 @@ export default function Attendance() {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
-      const role = staffMember?.appRole;
-      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
-      
-      if (canSeeAll) {
-        setClasses(list);
-      } else {
-        setClasses(list.filter(c => c.teacherEmail === user?.email));
-      }
+      setClasses(filterClassesForUser(list, staffMember?.appRole, isAdmin, user?.email));
     };
     if (user) fetchClasses();
   }, [user, isAdmin]);
@@ -75,33 +74,35 @@ export default function Attendance() {
   };
 
   const submitAttendance = async () => {
-    if (!selectedClass || !subject || !user?.email) {
-      toast.error('يرجى ملء كافة البيانات');
+    const validationError = validateAttendanceSubmission({
+      classId: selectedClass,
+      subject,
+      userEmail: user?.email,
+    });
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Create session
       const sessionData = {
+        ...buildSessionPayload(selectedClass, subject, period, user!.email!),
         date: serverTimestamp(),
-        period: parseInt(period),
-        subject,
-        classId: selectedClass,
-        teacherEmail: user.email,
       };
       const sessionRef = await addDoc(collection(db, 'sessions'), sessionData);
 
-      // 2. Create logs
       const logPromises = Object.entries(attendance).map(([studentId, d]) => {
         const data = d as { status: AttendanceStatus; note: string };
         return addDoc(collection(db, 'attendanceLogs'), {
-          studentId,
-          sessionId: sessionRef.id,
-          classId: selectedClass,
-          teacherEmail: user.email,
-          status: data.status,
-          note: data.note,
+          ...buildAttendanceLogPayload(
+            studentId,
+            sessionRef.id,
+            selectedClass,
+            user!.email!,
+            data.status,
+            data.note
+          ),
           timestamp: serverTimestamp(),
         });
       });
