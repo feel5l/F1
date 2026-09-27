@@ -17,6 +17,7 @@ import {
   buildSessionPayload,
   buildAttendanceLogPayload,
 } from '../lib/attendanceSubmit';
+import { calculateAttendanceStats } from '../lib/attendanceStats';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -118,14 +119,10 @@ export default function Attendance() {
     }
   };
 
-  const attendanceList = Object.values(attendance) as { status: AttendanceStatus; note: string }[];
-
-  const stats = {
-    present: attendanceList.filter((a) => a.status === 'حاضر').length,
-    absent: attendanceList.filter((a) => a.status === 'غائب').length,
-    late: attendanceList.filter((a) => a.status === 'متأخر').length,
-    excused: attendanceList.filter((a) => a.status === 'بعذر').length,
-  };
+  const attendanceStatuses = (Object.values(attendance) as { status: AttendanceStatus; note: string }[]).map(
+    (a) => a.status
+  );
+  const stats = calculateAttendanceStats(attendanceStatuses);
 
   return (
     <div className="space-y-6">
