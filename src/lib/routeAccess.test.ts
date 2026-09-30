@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { canAccessRoute, ROUTE_ACCESS } from './routeAccess';
+import { canAccessRoute, getUnauthorizedRedirect, ROUTE_ACCESS } from './routeAccess';
+import { resolveEffectiveRole } from './permissions';
 
 describe('canAccessRoute', () => {
   it('allows all authenticated roles to access dashboard', () => {
@@ -33,5 +34,34 @@ describe('canAccessRoute', () => {
     for (const path of Object.keys(ROUTE_ACCESS)) {
       expect(canAccessRoute(path, 'ADMIN')).toBe(true);
     }
+  });
+});
+
+describe('getUnauthorizedRedirect', () => {
+  it('returns the configured fallback path', () => {
+    expect(getUnauthorizedRedirect()).toBe('/');
+    expect(getUnauthorizedRedirect('/dashboard')).toBe('/dashboard');
+  });
+});
+
+/** Mirrors ProtectedRoute: resolveEffectiveRole + canAccessRoute */
+describe('effective role route guard', () => {
+  it('blocks default teachers from admin-only routes', () => {
+    const role = resolveEffectiveRole(undefined, false);
+    expect(canAccessRoute('/classes', role)).toBe(false);
+    expect(canAccessRoute('/students', role)).toBe(false);
+    expect(canAccessRoute('/attendance', role)).toBe(true);
+  });
+
+  it('grants full access when legacy isAdmin flag is set without appRole', () => {
+    const role = resolveEffectiveRole(undefined, true);
+    expect(canAccessRoute('/classes', role)).toBe(true);
+    expect(canAccessRoute('/staff', role)).toBe(true);
+  });
+
+  it('respects explicit appRole over admin fallback semantics for nav visibility', () => {
+    const supervisor = resolveEffectiveRole('SUPERVISOR', false);
+    expect(canAccessRoute('/reports', supervisor)).toBe(true);
+    expect(canAccessRoute('/classes', supervisor)).toBe(false);
   });
 });
