@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
 import { normalizeSchoolEmail } from '../lib/identifiers';
 import { shouldFallbackToGoogleRedirect } from '../lib/auth';
+import { validatePasswordResetEmail } from '../lib/loginValidation';
 import {
   Dialog,
   DialogContent,
@@ -77,16 +78,15 @@ export default function Login() {
   };
 
   const handleResetPassword = async () => {
-    const normalizedResetEmail = resetEmail.trim();
-
-    if (!normalizedResetEmail) {
-      toast.error('يرجى إدخال البريد الإلكتروني');
+    const validationError = validatePasswordResetEmail(resetEmail);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     
     setResetLoading(true);
     try {
-      const fullEmail = normalizeSchoolEmail(normalizedResetEmail);
+      const fullEmail = normalizeSchoolEmail(resetEmail.trim());
       await sendPasswordResetEmail(auth, fullEmail);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
       setIsResetOpen(false);

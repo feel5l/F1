@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { toast } from 'sonner';
 import { StaffMember, AppRole } from '../types';
 import { deriveAuthFlags, shouldBootstrapAdminRole } from './auth';
+import { resolveStaffMemberFromQueries } from './authStaff';
 
 interface AuthContextType {
   user: User | null;
@@ -50,23 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (!querySnapshot.empty) {
             const data = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as StaffMember;
-            // Overwrite appRole if present in roles collection
-            if (roleData && roleData.role) {
-              data.appRole = roleData.role as AppRole;
-            }
-            setStaffMember(data);
-          } else if (roleData && roleData.role) {
-            // In case user is in roles but not yet in staff (safety fallback)
-            setStaffMember({
-              fullName: authUser.displayName || 'مستخدم جديد',
-              email: authUser.email,
-              phone: '',
-              role: 'موظف',
-              appRole: roleData.role as AppRole,
-              specialization: ''
-            });
+            setStaffMember(
+              resolveStaffMemberFromQueries(data, authUser.email, authUser.displayName, roleData)
+            );
           } else {
-            setStaffMember(null);
+            setStaffMember(
+              resolveStaffMemberFromQueries(null, authUser.email, authUser.displayName, roleData)
+            );
           }
         } catch (error) {
           console.error("Error fetching staff member:", error);

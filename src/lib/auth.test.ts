@@ -40,6 +40,14 @@ describe('deriveAuthFlags', () => {
       isSupervisor: true,
     });
   });
+
+  it('does not grant teacher or admin flags to attendance officer', () => {
+    expect(deriveAuthFlags('ATTENDANCE_OFFICER')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
 });
 
 describe('shouldBootstrapAdminRole', () => {

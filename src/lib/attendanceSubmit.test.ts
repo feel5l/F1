@@ -58,6 +58,10 @@ describe('buildSessionPayload', () => {
       teacherEmail: 't@ghiabi.com',
     });
   });
+
+  it('returns NaN period for non-numeric input (caller should validate)', () => {
+    expect(buildSessionPayload('c1', 'علوم', 'abc', 't@ghiabi.com').period).toBeNaN();
+  });
 });
 
 describe('buildAttendanceLogPayload', () => {

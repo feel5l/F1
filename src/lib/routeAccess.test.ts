@@ -26,6 +26,12 @@ describe('canAccessRoute', () => {
     expect(canAccessRoute('/staff', 'ATTENDANCE_OFFICER')).toBe(false);
   });
 
+  it('allows attendance officer to submit attendance but not manage classes', () => {
+    expect(canAccessRoute('/attendance', 'ATTENDANCE_OFFICER')).toBe(true);
+    expect(canAccessRoute('/classes', 'ATTENDANCE_OFFICER')).toBe(false);
+    expect(canAccessRoute('/students', 'ATTENDANCE_OFFICER')).toBe(false);
+  });
+
   it('denies unknown routes', () => {
     expect(canAccessRoute('/unknown', 'ADMIN')).toBe(false);
   });
