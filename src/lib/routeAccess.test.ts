@@ -36,6 +36,27 @@ describe('canAccessRoute', () => {
     expect(canAccessRoute('/unknown', 'ADMIN')).toBe(false);
   });
 
+  it('blocks supervisors from attendance and logs (supervision-only scope)', () => {
+    expect(canAccessRoute('/attendance', 'SUPERVISOR')).toBe(false);
+    expect(canAccessRoute('/logs', 'SUPERVISOR')).toBe(false);
+    expect(canAccessRoute('/staff', 'SUPERVISOR')).toBe(true);
+    expect(canAccessRoute('/reports', 'SUPERVISOR')).toBe(true);
+  });
+
+  it('limits plain teachers to dashboard and attendance only', () => {
+    expect(canAccessRoute('/', 'TEACHER')).toBe(true);
+    expect(canAccessRoute('/attendance', 'TEACHER')).toBe(true);
+    expect(canAccessRoute('/students', 'TEACHER')).toBe(false);
+    expect(canAccessRoute('/staff', 'TEACHER')).toBe(false);
+    expect(canAccessRoute('/classes', 'TEACHER')).toBe(false);
+    expect(canAccessRoute('/logs', 'TEACHER')).toBe(false);
+    expect(canAccessRoute('/reports', 'TEACHER')).toBe(false);
+  });
+
+  it('allows attendance officer on dashboard and attendance flows', () => {
+    expect(canAccessRoute('/', 'ATTENDANCE_OFFICER')).toBe(true);
+  });
+
   it('covers every defined route in ROUTE_ACCESS', () => {
     for (const path of Object.keys(ROUTE_ACCESS)) {
       expect(canAccessRoute(path, 'ADMIN')).toBe(true);

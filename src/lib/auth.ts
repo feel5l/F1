@@ -28,7 +28,9 @@ export function shouldBootstrapAdminRole(
   email: string | null | undefined,
   existingRole: AppRole | string | null | undefined
 ): boolean {
-  return email === BOOTSTRAP_ADMIN_EMAIL && !existingRole;
+  if (email !== BOOTSTRAP_ADMIN_EMAIL) return false;
+  // Only bootstrap when the roles document has no role field yet (not empty string).
+  return existingRole === null || existingRole === undefined;
 }
 
 /**

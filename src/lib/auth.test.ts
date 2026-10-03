@@ -65,6 +65,10 @@ describe('shouldBootstrapAdminRole', () => {
     expect(shouldBootstrapAdminRole('other@gmail.com', null)).toBe(false);
     expect(shouldBootstrapAdminRole(null, null)).toBe(false);
   });
+
+  it('does not re-bootstrap when role field is empty string', () => {
+    expect(shouldBootstrapAdminRole(BOOTSTRAP_ADMIN_EMAIL, '')).toBe(false);
+  });
 });
 
 describe('shouldFallbackToGoogleRedirect', () => {
