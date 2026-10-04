@@ -68,4 +68,22 @@ describe('filterClassesForUser', () => {
   it('returns empty list when teacher has no matching classes', () => {
     expect(filterClassesForUser(classes, 'TEACHER', false, 'unknown@ghiabi.com')).toEqual([]);
   });
+
+  it('returns all classes for teacher leader and supervisor without admin flag', () => {
+    expect(filterClassesForUser(classes, 'TEACHER_LEADER', false, 'teacher@ghiabi.com')).toHaveLength(2);
+    expect(filterClassesForUser(classes, 'SUPERVISOR', false, 'teacher@ghiabi.com')).toHaveLength(2);
+  });
+});
+
+describe('isNavItemVisible for layout routes', () => {
+  it('hides admin-only nav entries from teachers', () => {
+    expect(isNavItemVisible(['ADMIN'], 'TEACHER')).toBe(false);
+    expect(isNavItemVisible(['ADMIN', 'TEACHER_LEADER'], 'TEACHER')).toBe(false);
+  });
+
+  it('shows mixed-role entries to attendance officer', () => {
+    expect(
+      isNavItemVisible(['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'], 'ATTENDANCE_OFFICER')
+    ).toBe(true);
+  });
 });

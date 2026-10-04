@@ -4,7 +4,7 @@ import {
   buildStaffMemberFromRoleOnly,
   resolveStaffMemberFromQueries,
 } from './authStaff';
-import { StaffMember } from '../types';
+import { AppRole, StaffMember } from '../types';
 
 const baseStaff: StaffMember = {
   id: 's1',
@@ -26,6 +26,12 @@ describe('applyRoleToStaffMember', () => {
 
   it('keeps staff document when roles collection is empty', () => {
     expect(applyRoleToStaffMember(baseStaff, null)).toEqual(baseStaff);
+  });
+
+  it('does not clear appRole when roles document has an empty role string', () => {
+    expect(
+      applyRoleToStaffMember(baseStaff, { role: '' as AppRole }).appRole
+    ).toBe('TEACHER');
   });
 });
 

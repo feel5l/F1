@@ -45,6 +45,30 @@ describe('validateAttendanceSubmission', () => {
       })
     ).toBe('يرجى ملء كافة البيانات');
   });
+
+  it('rejects whitespace-only required fields', () => {
+    expect(
+      validateAttendanceSubmission({
+        classId: '   ',
+        subject: 'رياضيات',
+        userEmail: 'teacher@ghiabi.com',
+      })
+    ).toBe('يرجى ملء كافة البيانات');
+    expect(
+      validateAttendanceSubmission({
+        classId: 'class-1',
+        subject: '  ',
+        userEmail: 'teacher@ghiabi.com',
+      })
+    ).toBe('يرجى ملء كافة البيانات');
+    expect(
+      validateAttendanceSubmission({
+        classId: 'class-1',
+        subject: 'رياضيات',
+        userEmail: '  ',
+      })
+    ).toBe('يرجى ملء كافة البيانات');
+  });
 });
 
 describe('buildSessionPayload', () => {

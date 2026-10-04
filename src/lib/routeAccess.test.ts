@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { canAccessRoute, getUnauthorizedRedirect, ROUTE_ACCESS } from './routeAccess';
+import {
+  canAccessRoute,
+  getUnauthorizedRedirect,
+  ROUTE_ACCESS,
+  type EffectiveRole,
+} from './routeAccess';
 import { resolveEffectiveRole } from './permissions';
+
+function accessibleRoutesFor(role: EffectiveRole): string[] {
+  return Object.keys(ROUTE_ACCESS)
+    .filter((path) => canAccessRoute(path, role))
+    .sort();
+}
 
 describe('canAccessRoute', () => {
   it('allows all authenticated roles to access dashboard', () => {
@@ -61,6 +72,30 @@ describe('canAccessRoute', () => {
     for (const path of Object.keys(ROUTE_ACCESS)) {
       expect(canAccessRoute(path, 'ADMIN')).toBe(true);
     }
+  });
+});
+
+describe('accessible route sets per role', () => {
+  it('matches the expected RBAC surface for each role', () => {
+    expect(accessibleRoutesFor('TEACHER')).toEqual(['/', '/attendance']);
+    expect(accessibleRoutesFor('ATTENDANCE_OFFICER')).toEqual(['/', '/attendance', '/logs']);
+    expect(accessibleRoutesFor('TEACHER_LEADER')).toEqual([
+      '/',
+      '/attendance',
+      '/logs',
+      '/reports',
+      '/students',
+    ]);
+    expect(accessibleRoutesFor('SUPERVISOR')).toEqual(['/', '/reports', '/staff']);
+    expect(accessibleRoutesFor('ADMIN')).toEqual([
+      '/',
+      '/attendance',
+      '/classes',
+      '/logs',
+      '/reports',
+      '/staff',
+      '/students',
+    ]);
   });
 });
 

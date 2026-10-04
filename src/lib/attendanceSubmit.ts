@@ -13,7 +13,10 @@ const VALIDATION_ERROR = 'يرجى ملء كافة البيانات';
 export function validateAttendanceSubmission(
   input: AttendanceSubmissionInput
 ): string | null {
-  if (!input.classId || !input.subject || !input.userEmail) {
+  const classId = input.classId?.trim();
+  const subject = input.subject?.trim();
+  const userEmail = input.userEmail?.trim();
+  if (!classId || !subject || !userEmail) {
     return VALIDATION_ERROR;
   }
   return null;
