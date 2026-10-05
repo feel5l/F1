@@ -3,7 +3,23 @@ import {
   buildAbsenceNotificationMessage,
   buildGuardianWhatsAppUrl,
   cleanPhoneNumber,
+  hasGuardianPhone,
 } from './whatsapp';
+
+describe('hasGuardianPhone', () => {
+  it('requires a non-empty trimmed phone', () => {
+    expect(hasGuardianPhone({ guardianPhone: '0501234567' })).toBe(true);
+    expect(hasGuardianPhone({ guardianPhone: '  0501234567  ' })).toBe(true);
+  });
+
+  it('rejects missing, empty, or whitespace-only numbers', () => {
+    expect(hasGuardianPhone(undefined)).toBe(false);
+    expect(hasGuardianPhone({})).toBe(false);
+    expect(hasGuardianPhone({ guardianPhone: '' })).toBe(false);
+    expect(hasGuardianPhone({ guardianPhone: '   ' })).toBe(false);
+    expect(hasGuardianPhone({ guardianPhone: null })).toBe(false);
+  });
+});
 
 describe('cleanPhoneNumber', () => {
   it('keeps only digits', () => {

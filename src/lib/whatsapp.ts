@@ -1,4 +1,11 @@
 /**
+ * Returns true when a student record has a non-empty guardian phone for WhatsApp.
+ */
+export function hasGuardianPhone(student?: { guardianPhone?: string | null }): boolean {
+  return Boolean(student?.guardianPhone?.trim());
+}
+
+/**
  * Strips non-digit characters from a phone number for WhatsApp deep links.
  */
 export function cleanPhoneNumber(phone: string): string {

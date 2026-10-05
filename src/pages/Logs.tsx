@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import {
   buildAbsenceNotificationMessage,
   buildGuardianWhatsAppUrl,
+  hasGuardianPhone,
 } from '../lib/whatsapp';
 
 export default function Logs() {
@@ -72,7 +73,7 @@ export default function Logs() {
   }, [user?.email, isAdmin]);
 
   const sendWhatsAppNotification = (log: AttendanceLog, student?: Student) => {
-    if (!student?.guardianPhone) {
+    if (!hasGuardianPhone(student)) {
       toast.error('رقم ولي الأمر غير متوفر لهذا الطالب');
       return;
     }
