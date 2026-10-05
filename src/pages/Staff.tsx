@@ -27,6 +27,12 @@ import {
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import {
+  buildStaffRoleUpdate,
+  buildRolesCollectionUpdate,
+  canUpdateStaffRole,
+} from '../lib/staffRoles';
+import { filterStaffMembers } from '../lib/staffSearch';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -59,21 +65,15 @@ export default function Staff() {
   };
 
   const handleUpdateRole = async () => {
-    if (!editingMember || !newRole) return;
+    if (!editingMember || !canUpdateStaffRole(editingMember.email, newRole)) return;
     
     try {
       const memberRef = doc(db, 'staff', editingMember.id!);
-      await updateDoc(memberRef, {
-        appRole: newRole
-      });
+      await updateDoc(memberRef, buildStaffRoleUpdate(newRole as AppRole));
 
-      // Sync with global roles collection for Firestore rules efficiency
       if (editingMember.email) {
         const roleRef = doc(db, 'roles', editingMember.email);
-        await setDoc(roleRef, {
-          role: newRole,
-          updatedAt: new Date()
-        });
+        await setDoc(roleRef, buildRolesCollectionUpdate(newRole as AppRole));
       }
 
       toast.success('تم تحديث الدور بنجاح');
@@ -85,11 +85,7 @@ export default function Staff() {
     }
   };
 
-  const filteredStaff = staff.filter(member =>
-    member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (member.role || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.nationalId.includes(searchTerm)
-  );
+  const filteredStaff = filterStaffMembers(staff, searchTerm);
 
   const getRoleBadge = (role?: AppRole) => {
     switch (role) {
