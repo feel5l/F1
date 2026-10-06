@@ -1,5 +1,42 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDashboardAttendanceRate } from './dashboardStats';
+import {
+  calculateDashboardAttendanceRate,
+  summarizeDashboardLogStatuses,
+} from './dashboardStats';
+import { AttendanceStatus } from '../types';
+
+describe('summarizeDashboardLogStatuses', () => {
+  it('counts present, absent, and late log rows', () => {
+    const statuses: AttendanceStatus[] = [
+      'حاضر',
+      'حاضر',
+      'غائب',
+      'متأخر',
+      'بعذر',
+    ];
+    expect(summarizeDashboardLogStatuses(statuses)).toEqual({
+      presentCount: 2,
+      absentCount: 1,
+      lateCount: 1,
+    });
+  });
+
+  it('ignores excused status in KPI counters', () => {
+    expect(summarizeDashboardLogStatuses(['بعذر', 'بعذر'])).toEqual({
+      presentCount: 0,
+      absentCount: 0,
+      lateCount: 0,
+    });
+  });
+
+  it('returns zeros for empty input', () => {
+    expect(summarizeDashboardLogStatuses([])).toEqual({
+      presentCount: 0,
+      absentCount: 0,
+      lateCount: 0,
+    });
+  });
+});
 
 describe('calculateDashboardAttendanceRate', () => {
   it('counts present and late toward attendance rate', () => {
