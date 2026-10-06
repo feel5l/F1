@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { buildFirestoreErrorInfo, formatFirestoreError } from './firestoreError';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
@@ -31,20 +32,15 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  const errInfo = buildFirestoreErrorInfo(error, operationType, path, {
+    userId: auth.currentUser?.uid,
+    email: auth.currentUser?.email,
+    emailVerified: auth.currentUser?.emailVerified,
+    isAnonymous: auth.currentUser?.isAnonymous,
+    tenantId: auth.currentUser?.tenantId,
+  });
+  console.error('Firestore Error: ', formatFirestoreError(errInfo));
+  throw new Error(formatFirestoreError(errInfo));
 }
 
 // Test connection
