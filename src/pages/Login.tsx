@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
 import {
+  normalizeGhiyabiLoginIdentifier,
+  shouldUseGoogleRedirectOnPopupError,
+} from '../lib/authCredentials';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -47,7 +51,7 @@ export default function Login() {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
-      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+      if (shouldUseGoogleRedirectOnPopupError(error?.code)) {
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
         return;
@@ -63,8 +67,7 @@ export default function Login() {
     setLoading(true);
     try {
       // Handle both email and username (zayd12345)
-      const normalizedEmail = email.trim();
-      const loginIdentifier = normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@ghiabi.com`;
+      const loginIdentifier = normalizeGhiyabiLoginIdentifier(email);
       await signInWithEmailAndPassword(auth, loginIdentifier, password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
@@ -76,7 +79,7 @@ export default function Login() {
   };
 
   const handleResetPassword = async () => {
-    const normalizedResetEmail = resetEmail.trim();
+    const normalizedResetEmail = normalizeGhiyabiLoginIdentifier(resetEmail);
 
     if (!normalizedResetEmail) {
       toast.error('يرجى إدخال البريد الإلكتروني');
@@ -85,7 +88,7 @@ export default function Login() {
     
     setResetLoading(true);
     try {
-      const fullEmail = normalizedResetEmail.includes('@') ? normalizedResetEmail : `${normalizedResetEmail}@ghiabi.com`;
+      const fullEmail = normalizedResetEmail;
       await sendPasswordResetEmail(auth, fullEmail);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
       setIsResetOpen(false);
