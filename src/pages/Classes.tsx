@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
+import { normalizeTeacherEmailSelection } from '../lib/classTeacher';
 
 export default function Classes() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -181,7 +182,7 @@ export default function Classes() {
               <Label>المعلم</Label>
               <Select 
                 value={editingClass?.teacherEmail || "none"} 
-                onValueChange={(val) => setEditingClass(prev => prev ? { ...prev, teacherEmail: val === "none" ? "" : val } : null)}
+                onValueChange={(val) => setEditingClass(prev => prev ? { ...prev, teacherEmail: normalizeTeacherEmailSelection(val) } : null)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر معلماً" />
