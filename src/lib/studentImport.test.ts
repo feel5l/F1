@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { detectStudentCsvStartIndex, parseStudentCsvRow } from './studentImport';
+import {
+  detectStudentCsvStartIndex,
+  parseStudentCsvRow,
+  countImportableStudentRows,
+} from './studentImport';
 
 describe('detectStudentCsvStartIndex', () => {
   it('skips Arabic header row', () => {
@@ -38,5 +42,27 @@ describe('parseStudentCsvRow', () => {
       guardianPhone: '',
       parentEmail: '',
     });
+  });
+});
+
+describe('countImportableStudentRows', () => {
+  it('skips header row and blank name rows', () => {
+    const rows = [
+      ['الاسم الكامل', 'ولي الأمر'],
+      ['أحمد', 'ولي 1'],
+      ['', 'ignored'],
+      ['سارة', 'ولي 2'],
+    ];
+    expect(countImportableStudentRows(rows)).toBe(2);
+  });
+
+  it('counts from row 0 when there is no header', () => {
+    expect(
+      countImportableStudentRows([
+        ['طالب 1'],
+        ['   '],
+        ['طالب 2'],
+      ])
+    ).toBe(2);
   });
 });

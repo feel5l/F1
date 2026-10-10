@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
 import { detectStudentCsvStartIndex, parseStudentCsvRow } from '../lib/studentImport';
-import { validateStudentForm, filterStudents } from '../lib/studentForm';
+import { validateStudentForm, filterStudents, buildStudentSavePayload } from '../lib/studentForm';
 import {
   STUDENT_CSV_HEADERS,
   buildStudentCsvExportRows,
@@ -111,11 +111,7 @@ export default function Students() {
       return;
     }
 
-    const selectedClass = classes.find(c => c.id === formData.classId);
-    const dataToSave = {
-      ...formData,
-      className: selectedClass?.name || formData.className
-    };
+    const dataToSave = buildStudentSavePayload(formData, classes);
 
     try {
       if (editingStudent) {
@@ -156,13 +152,12 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           const startIndex = detectStudentCsvStartIndex(data[0]?.[0]);
-
+          const selectedClass = classes.find((c) => c.id === importClassId);
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
             const parsed = parseStudentCsvRow(data[i]);
             if (!parsed) continue;
 
-            const selectedClass = classes.find(c => c.id === importClassId);
             await addDoc(collection(db, 'students'), {
               fullName: parsed.name,
               classId: importClassId,

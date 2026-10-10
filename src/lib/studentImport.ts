@@ -27,3 +27,15 @@ export function parseStudentCsvRow(row: string[]): ParsedStudentRow | null {
     parentEmail: row[3]?.trim() || '',
   };
 }
+
+/**
+ * Counts rows that would be imported from a parsed CSV matrix (skips header + blank names).
+ */
+export function countImportableStudentRows(rows: string[][]): number {
+  const startIndex = detectStudentCsvStartIndex(rows[0]?.[0]);
+  let count = 0;
+  for (let i = startIndex; i < rows.length; i++) {
+    if (parseStudentCsvRow(rows[i])) count++;
+  }
+  return count;
+}

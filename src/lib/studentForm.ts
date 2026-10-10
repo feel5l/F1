@@ -1,8 +1,33 @@
-import { Student } from '../types';
+import { Class, Student } from '../types';
 
 export interface StudentFormInput {
   fullName: string;
   classId: string;
+}
+
+export interface StudentSaveInput {
+  fullName: string;
+  classId: string;
+  className?: string;
+  guardianName: string;
+  guardianPhone: string;
+  parentEmail?: string;
+  isActive: boolean;
+}
+
+/**
+ * Resolves className from the live classes list before persisting a student record.
+ */
+export function buildStudentSavePayload(
+  form: StudentSaveInput,
+  classes: Pick<Class, 'id' | 'name'>[]
+): Omit<Student, 'id'> {
+  const selectedClass = classes.find((c) => c.id === form.classId);
+  return {
+    ...form,
+    className: selectedClass?.name || form.className || '',
+    parentEmail: form.parentEmail || '',
+  };
 }
 
 /**

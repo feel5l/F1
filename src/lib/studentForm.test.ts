@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { validateStudentForm, filterStudents } from './studentForm';
+import { validateStudentForm, filterStudents, buildStudentSavePayload } from './studentForm';
+import { Class } from '../types';
 import { Student } from '../types';
 
 const sampleStudents: Student[] = [
@@ -37,6 +38,42 @@ describe('validateStudentForm', () => {
 
   it('rejects missing class', () => {
     expect(validateStudentForm({ fullName: 'أحمد', classId: '' })).toBe(false);
+  });
+});
+
+describe('buildStudentSavePayload', () => {
+  const classes: Pick<Class, 'id' | 'name'>[] = [
+    { id: 'c1', name: 'الثالث 1' },
+    { id: 'c2', name: 'الرابع 2' },
+  ];
+
+  const baseForm = {
+    fullName: 'أحمد',
+    classId: 'c1',
+    className: 'اسم قديم',
+    guardianName: 'ولي',
+    guardianPhone: '050',
+    parentEmail: '',
+    isActive: true,
+  };
+
+  it('prefers live class name from the classes collection', () => {
+    expect(buildStudentSavePayload(baseForm, classes).className).toBe('الثالث 1');
+  });
+
+  it('keeps form className when class id is unknown', () => {
+    expect(
+      buildStudentSavePayload({ ...baseForm, classId: 'missing' }, classes).className
+    ).toBe('اسم قديم');
+  });
+
+  it('defaults to empty string when no class name is available', () => {
+    expect(
+      buildStudentSavePayload(
+        { ...baseForm, classId: 'missing', className: '' },
+        classes
+      ).className
+    ).toBe('');
   });
 });
 
