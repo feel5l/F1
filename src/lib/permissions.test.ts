@@ -69,6 +69,10 @@ describe('filterClassesForUser', () => {
     expect(filterClassesForUser(classes, 'TEACHER', false, 'unknown@ghiabi.com')).toEqual([]);
   });
 
+  it('does not expose homeroom classes when the teacher email is missing', () => {
+    expect(filterClassesForUser(classes, 'TEACHER', false, undefined)).toEqual([]);
+  });
+
   it('returns all classes for teacher leader and supervisor without admin flag', () => {
     expect(filterClassesForUser(classes, 'TEACHER_LEADER', false, 'teacher@ghiabi.com')).toHaveLength(2);
     expect(filterClassesForUser(classes, 'SUPERVISOR', false, 'teacher@ghiabi.com')).toHaveLength(2);

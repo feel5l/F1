@@ -75,6 +75,16 @@ describe('buildStudentSavePayload', () => {
       ).className
     ).toBe('');
   });
+
+  it('preserves parent email and defaults missing values to empty string', () => {
+    expect(
+      buildStudentSavePayload({ ...baseForm, parentEmail: 'parent@school.com' }, classes)
+        .parentEmail
+    ).toBe('parent@school.com');
+    expect(buildStudentSavePayload({ ...baseForm, parentEmail: '' }, classes).parentEmail).toBe(
+      ''
+    );
+  });
 });
 
 describe('filterStudents', () => {

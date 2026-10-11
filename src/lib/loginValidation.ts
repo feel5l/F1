@@ -19,3 +19,10 @@ export function validatePasswordResetEmail(rawEmail: string): string | null {
 export function resolvePasswordResetEmail(rawEmail: string): string {
   return normalizeSchoolEmail(rawEmail.trim());
 }
+
+/**
+ * Normalizes username or email for Firebase email/password sign-in (matches Login flow).
+ */
+export function resolveLoginEmail(rawEmail: string): string {
+  return normalizeSchoolEmail(rawEmail);
+}

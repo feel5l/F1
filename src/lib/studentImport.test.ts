@@ -3,6 +3,9 @@ import {
   detectStudentCsvStartIndex,
   parseStudentCsvRow,
   countImportableStudentRows,
+  validateStudentImportClassSelected,
+  resolveStudentImportClassName,
+  buildStudentImportRecord,
 } from './studentImport';
 
 describe('detectStudentCsvStartIndex', () => {
@@ -41,6 +44,57 @@ describe('parseStudentCsvRow', () => {
       guardianName: '',
       guardianPhone: '',
       parentEmail: '',
+    });
+  });
+});
+
+describe('validateStudentImportClassSelected', () => {
+  it('requires a non-empty class id before import', () => {
+    expect(validateStudentImportClassSelected('')).toBe('يرجى اختيار الفصل أولاً');
+    expect(validateStudentImportClassSelected('   ')).toBe('يرجى اختيار الفصل أولاً');
+  });
+
+  it('accepts a selected class id', () => {
+    expect(validateStudentImportClassSelected('class-1')).toBeNull();
+  });
+});
+
+describe('resolveStudentImportClassName', () => {
+  it('resolves the class display name from the live list', () => {
+    expect(
+      resolveStudentImportClassName(
+        [{ id: 'c1', name: 'الثالث 1' }],
+        'c1'
+      )
+    ).toBe('الثالث 1');
+  });
+
+  it('returns empty string when class id is unknown', () => {
+    expect(resolveStudentImportClassName([], 'missing')).toBe('');
+  });
+});
+
+describe('buildStudentImportRecord', () => {
+  it('maps parsed CSV fields to the Firestore student shape', () => {
+    expect(
+      buildStudentImportRecord(
+        {
+          name: 'أحمد',
+          guardianName: 'ولي',
+          guardianPhone: '050',
+          parentEmail: 'parent@test.com',
+        },
+        'c1',
+        'الثالث 1'
+      )
+    ).toEqual({
+      fullName: 'أحمد',
+      classId: 'c1',
+      className: 'الثالث 1',
+      guardianName: 'ولي',
+      guardianPhone: '050',
+      parentEmail: 'parent@test.com',
+      isActive: true,
     });
   });
 });

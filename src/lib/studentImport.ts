@@ -1,8 +1,51 @@
+import { Class, Student } from '../types';
+
 export interface ParsedStudentRow {
   name: string;
   guardianName: string;
   guardianPhone: string;
   parentEmail: string;
+}
+
+const IMPORT_CLASS_REQUIRED_MESSAGE = 'يرجى اختيار الفصل أولاً';
+
+/**
+ * Validates that a target class was selected before CSV import begins.
+ */
+export function validateStudentImportClassSelected(importClassId: string): string | null {
+  if (!importClassId?.trim()) {
+    return IMPORT_CLASS_REQUIRED_MESSAGE;
+  }
+  return null;
+}
+
+/**
+ * Resolves the display class name for imported student rows.
+ */
+export function resolveStudentImportClassName(
+  classes: Pick<Class, 'id' | 'name'>[],
+  importClassId: string
+): string {
+  return classes.find((c) => c.id === importClassId)?.name || '';
+}
+
+/**
+ * Builds the Firestore student document for a parsed CSV row (matches Students import).
+ */
+export function buildStudentImportRecord(
+  parsed: ParsedStudentRow,
+  classId: string,
+  className: string
+): Omit<Student, 'id'> {
+  return {
+    fullName: parsed.name,
+    classId,
+    className,
+    guardianName: parsed.guardianName,
+    guardianPhone: parsed.guardianPhone,
+    parentEmail: parsed.parentEmail,
+    isActive: true,
+  };
 }
 
 /**

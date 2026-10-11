@@ -77,6 +77,16 @@ describe('buildTrendData', () => {
     expect(data[1].حاضر).toBe(1);
     expect(data[0].dateObj.getTime()).toBeLessThan(data[1].dateObj.getTime());
   });
+
+  it('includes excused absences in daily trend buckets', () => {
+    const data = buildTrendData([
+      makeLog('بعذر', new Date('2026-03-10T08:00:00')),
+      makeLog('بعذر', new Date('2026-03-10T09:00:00')),
+    ]);
+
+    expect(data).toHaveLength(1);
+    expect(data[0].بعذر).toBe(2);
+  });
 });
 
 describe('filterClassesForReports', () => {

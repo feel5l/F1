@@ -13,7 +13,13 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
-import { detectStudentCsvStartIndex, parseStudentCsvRow } from '../lib/studentImport';
+import {
+  detectStudentCsvStartIndex,
+  parseStudentCsvRow,
+  validateStudentImportClassSelected,
+  resolveStudentImportClassName,
+  buildStudentImportRecord,
+} from '../lib/studentImport';
 import { validateStudentForm, filterStudents, buildStudentSavePayload } from '../lib/studentForm';
 import {
   STUDENT_CSV_HEADERS,
@@ -141,8 +147,9 @@ export default function Students() {
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !importClassId) {
-      if (!importClassId) toast.error('يرجى اختيار الفصل أولاً');
+    const classError = validateStudentImportClassSelected(importClassId);
+    if (!file || classError) {
+      if (classError) toast.error(classError);
       return;
     }
 
@@ -152,21 +159,16 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           const startIndex = detectStudentCsvStartIndex(data[0]?.[0]);
-          const selectedClass = classes.find((c) => c.id === importClassId);
+          const importClassName = resolveStudentImportClassName(classes, importClassId);
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
             const parsed = parseStudentCsvRow(data[i]);
             if (!parsed) continue;
 
-            await addDoc(collection(db, 'students'), {
-              fullName: parsed.name,
-              classId: importClassId,
-              className: selectedClass?.name || '',
-              guardianName: parsed.guardianName,
-              guardianPhone: parsed.guardianPhone,
-              parentEmail: parsed.parentEmail,
-              isActive: true,
-            });
+            await addDoc(
+              collection(db, 'students'),
+              buildStudentImportRecord(parsed, importClassId, importClassName)
+            );
             count++;
           }
           

@@ -8,9 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
-import { normalizeSchoolEmail } from '../lib/identifiers';
 import { shouldFallbackToGoogleRedirect } from '../lib/auth';
-import { validatePasswordResetEmail, resolvePasswordResetEmail } from '../lib/loginValidation';
+import {
+  validatePasswordResetEmail,
+  resolvePasswordResetEmail,
+  resolveLoginEmail,
+} from '../lib/loginValidation';
 import {
   Dialog,
   DialogContent,
@@ -66,7 +69,7 @@ export default function Login() {
     setLoading(true);
     try {
       // Handle both email and username (zayd12345)
-      const loginIdentifier = normalizeSchoolEmail(email);
+      const loginIdentifier = resolveLoginEmail(email);
       await signInWithEmailAndPassword(auth, loginIdentifier, password);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
