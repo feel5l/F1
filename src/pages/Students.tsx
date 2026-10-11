@@ -13,6 +13,18 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import {
+  detectStudentCsvStartIndex,
+  parseStudentCsvRow,
+  validateStudentImportClassSelected,
+  resolveStudentImportClassName,
+  buildStudentImportRecord,
+} from '../lib/studentImport';
+import { validateStudentForm, filterStudents, buildStudentSavePayload } from '../lib/studentForm';
+import {
+  STUDENT_CSV_HEADERS,
+  buildStudentCsvExportRows,
+} from '../lib/studentExport';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -57,19 +69,8 @@ export default function Students() {
   }, []);
 
   const exportToCSV = () => {
-    const headers = ["المعرف", "الاسم الكامل", "الفصل", "اسم ولي الأمر", "هاتف ولي الأمر", "الحالة"];
-    const rows = students.map(s => {
-      const className = classes.find(c => c.id === s.classId)?.name || s.className || 'غير محدد';
-      const status = s.isActive ? 'نشط' : 'غير نشط';
-      return [
-        s.id,
-        s.fullName,
-        className,
-        s.guardianName || '-',
-        s.guardianPhone || '-',
-        status
-      ];
-    });
+    const headers = [...STUDENT_CSV_HEADERS];
+    const rows = buildStudentCsvExportRows(students, classes);
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -111,16 +112,12 @@ export default function Students() {
   };
 
   const handleSave = async () => {
-    if (!formData.fullName || !formData.classId) {
+    if (!validateStudentForm(formData)) {
       toast.error('يرجى إكمال البيانات الأساسية');
       return;
     }
 
-    const selectedClass = classes.find(c => c.id === formData.classId);
-    const dataToSave = {
-      ...formData,
-      className: selectedClass?.name || formData.className
-    };
+    const dataToSave = buildStudentSavePayload(formData, classes);
 
     try {
       if (editingStudent) {
@@ -150,8 +147,9 @@ export default function Students() {
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !importClassId) {
-      if (!importClassId) toast.error('يرجى اختيار الفصل أولاً');
+    const classError = validateStudentImportClassSelected(importClassId);
+    if (!file || classError) {
+      if (classError) toast.error(classError);
       return;
     }
 
@@ -160,26 +158,18 @@ export default function Students() {
       complete: async (results) => {
         try {
           const data = results.data as string[][];
-          // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
-          
+          const startIndex = detectStudentCsvStartIndex(data[0]?.[0]);
+          const importClassName = resolveStudentImportClassName(classes, importClassId);
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
-            const row = data[i];
-            const name = row[0]?.trim();
-            if (name) {
-              const selectedClass = classes.find(c => c.id === importClassId);
-              await addDoc(collection(db, 'students'), {
-                fullName: name,
-                classId: importClassId,
-                className: selectedClass?.name || '',
-                guardianName: row[1]?.trim() || '',
-                guardianPhone: row[2]?.trim() || '',
-                parentEmail: row[3]?.trim() || '',
-                isActive: true,
-              });
-              count++;
-            }
+            const parsed = parseStudentCsvRow(data[i]);
+            if (!parsed) continue;
+
+            await addDoc(
+              collection(db, 'students'),
+              buildStudentImportRecord(parsed, importClassId, importClassName)
+            );
+            count++;
           }
           
           toast.success(`تم استيراد ${count} طالباً بنجاح`);
@@ -202,11 +192,7 @@ export default function Students() {
     });
   };
 
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase());
-    const matchesClass = classFilter === 'all' || s.classId === classFilter;
-    return matchesSearch && matchesClass;
-  });
+  const filteredStudents = filterStudents(students, search, classFilter);
 
   return (
     <div className="space-y-6">
