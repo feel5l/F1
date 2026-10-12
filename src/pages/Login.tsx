@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
 import { normalizeSchoolEmail } from '../lib/schoolEmail';
+import { shouldFallbackToGoogleRedirect } from '../lib/googleAuth';
 import {
   Dialog,
   DialogContent,
@@ -48,7 +49,7 @@ export default function Login() {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (error: any) {
-      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+      if (shouldFallbackToGoogleRedirect(error)) {
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
         return;
