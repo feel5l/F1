@@ -36,6 +36,29 @@ describe('canViewAllClasses', () => {
   it('denies plain teachers', () => {
     expect(canViewAllClasses(false, 'TEACHER')).toBe(false);
   });
+
+  it('allows teacher leaders and supervisors (attendance class list)', () => {
+    expect(canViewAllClasses(false, 'TEACHER_LEADER')).toBe(true);
+    expect(canViewAllClasses(false, 'SUPERVISOR')).toBe(true);
+  });
+});
+
+describe('deriveAuthRoleFlags — admin and teacher', () => {
+  it('marks ADMIN only as admin', () => {
+    expect(deriveAuthRoleFlags('ADMIN')).toEqual({
+      isAdmin: true,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
+
+  it('marks TEACHER only as teacher', () => {
+    expect(deriveAuthRoleFlags('TEACHER')).toEqual({
+      isAdmin: false,
+      isTeacher: true,
+      isSupervisor: false,
+    });
+  });
 });
 
 describe('shouldBootstrapAdminRole', () => {
