@@ -13,6 +13,10 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import {
+  STUDENT_CSV_HEADERS,
+  buildStudentCsvExportRows,
+} from '../lib/studentExport';
 import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
 
 export default function Students() {
@@ -58,19 +62,8 @@ export default function Students() {
   }, []);
 
   const exportToCSV = () => {
-    const headers = ["المعرف", "الاسم الكامل", "الفصل", "اسم ولي الأمر", "هاتف ولي الأمر", "الحالة"];
-    const rows = students.map(s => {
-      const className = classes.find(c => c.id === s.classId)?.name || s.className || 'غير محدد';
-      const status = s.isActive ? 'نشط' : 'غير نشط';
-      return [
-        s.id,
-        s.fullName,
-        className,
-        s.guardianName || '-',
-        s.guardianPhone || '-',
-        status
-      ];
-    });
+    const headers = [...STUDENT_CSV_HEADERS];
+    const rows = buildStudentCsvExportRows(students, classes);
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + [headers, ...rows].map(e => e.join(",")).join("\n");
