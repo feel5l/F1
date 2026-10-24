@@ -26,6 +26,17 @@ export function canViewAllClasses(isAdmin: boolean, appRole?: AppRole): boolean 
   );
 }
 
+/** Filters class lists for attendance/reports when the role is scoped to assigned classes only. */
+export function filterClassesForUser<T extends { teacherEmail?: string }>(
+  classes: readonly T[],
+  options: { isAdmin: boolean; appRole?: AppRole; userEmail?: string | null }
+): T[] {
+  if (canViewAllClasses(options.isAdmin, options.appRole)) {
+    return [...classes];
+  }
+  return classes.filter((c) => c.teacherEmail === options.userEmail);
+}
+
 export function shouldBootstrapAdminRole(
   email: string | null | undefined,
   roleData: { role?: string } | null | undefined
