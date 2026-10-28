@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
+import { filterClassesForUser } from '../lib/roleAccess';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
 };
 
 export default function Reports() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, staffMember } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -60,17 +61,19 @@ export default function Reports() {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         
-        if (isAdmin) {
-          setClasses(classList);
-        } else {
-          setClasses(classList.filter(c => c.teacherEmail === user?.email));
-        }
+        setClasses(
+          filterClassesForUser(classList, {
+            isAdmin,
+            appRole: staffMember?.appRole,
+            userEmail: user?.email,
+          })
+        );
       } catch (err) {
         console.error(err);
       }
     };
     if (user) fetchInitialData();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, staffMember?.appRole]);
 
   useEffect(() => {
     if (selectedClass === 'all') {
