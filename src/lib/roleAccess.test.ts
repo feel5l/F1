@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   BOOTSTRAP_ADMIN_EMAIL,
   canViewAllClasses,
+  filterClassesForUser,
   deriveAuthRoleFlags,
   getRoleLabel,
   isRoleAllowedForNav,
@@ -33,8 +34,40 @@ describe('canViewAllClasses', () => {
     expect(canViewAllClasses(false, 'ATTENDANCE_OFFICER')).toBe(true);
   });
 
+  it('allows teacher leader and supervisor to see all classes', () => {
+    expect(canViewAllClasses(false, 'TEACHER_LEADER')).toBe(true);
+    expect(canViewAllClasses(false, 'SUPERVISOR')).toBe(true);
+  });
+
   it('denies plain teachers', () => {
     expect(canViewAllClasses(false, 'TEACHER')).toBe(false);
+  });
+});
+
+describe('filterClassesForUser', () => {
+  const sample = [
+    { id: 'a', teacherEmail: 't1@ghiabi.com' },
+    { id: 'b', teacherEmail: 't2@ghiabi.com' },
+  ];
+
+  it('returns all classes for roles with global class visibility', () => {
+    expect(
+      filterClassesForUser(sample, {
+        isAdmin: false,
+        appRole: 'TEACHER_LEADER',
+        userEmail: 't1@ghiabi.com',
+      })
+    ).toEqual(sample);
+  });
+
+  it('scopes teachers to their assigned classes only', () => {
+    expect(
+      filterClassesForUser(sample, {
+        isAdmin: false,
+        appRole: 'TEACHER',
+        userEmail: 't1@ghiabi.com',
+      })
+    ).toEqual([sample[0]]);
   });
 });
 

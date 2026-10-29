@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { getRoleLabel, isRoleAllowedForNav, resolveEffectiveRole } from '../lib/roleAccess';
+import { LAYOUT_NAV_ROUTE_ACCESS } from '../lib/layoutNav';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,13 +32,13 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
-    { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
-    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
-    { name: 'إدارة الفصول', path: '/classes', icon: School, roles: ['ADMIN'] },
-    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'] },
-    { name: 'سجل الغياب', path: '/logs', icon: History, roles: ['ADMIN', 'ATTENDANCE_OFFICER', 'TEACHER_LEADER'] },
-    { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
+    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: LAYOUT_NAV_ROUTE_ACCESS['/'] },
+    { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: LAYOUT_NAV_ROUTE_ACCESS['/students'] },
+    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: LAYOUT_NAV_ROUTE_ACCESS['/staff'] },
+    { name: 'إدارة الفصول', path: '/classes', icon: School, roles: LAYOUT_NAV_ROUTE_ACCESS['/classes'] },
+    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, roles: LAYOUT_NAV_ROUTE_ACCESS['/attendance'] },
+    { name: 'سجل الغياب', path: '/logs', icon: History, roles: LAYOUT_NAV_ROUTE_ACCESS['/logs'] },
+    { name: 'التقارير', path: '/reports', icon: BarChart3, roles: LAYOUT_NAV_ROUTE_ACCESS['/reports'] },
   ];
 
   const currentRole = resolveEffectiveRole(staffMember?.appRole, isAdmin);
