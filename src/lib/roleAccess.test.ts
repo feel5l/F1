@@ -33,6 +33,11 @@ describe('canViewAllClasses', () => {
     expect(canViewAllClasses(false, 'ATTENDANCE_OFFICER')).toBe(true);
   });
 
+  it('allows teacher leaders and supervisors to see all classes', () => {
+    expect(canViewAllClasses(false, 'TEACHER_LEADER')).toBe(true);
+    expect(canViewAllClasses(false, 'SUPERVISOR')).toBe(true);
+  });
+
   it('denies plain teachers', () => {
     expect(canViewAllClasses(false, 'TEACHER')).toBe(false);
   });
