@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserMinus, Clock, CheckCircle2 } from 'lucide-react';
 import { Student, AttendanceLog } from '../types';
+import { computeDashboardAttendanceRate, countAttendanceStatuses } from '../lib/attendanceStats';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -55,17 +56,17 @@ export default function Dashboard() {
         const logsSnap = await getDocs(logsQuery);
         const logs = logsSnap.docs.map(doc => doc.data() as AttendanceLog);
 
-        const absentCount = logs.filter(l => l.status === 'غائب').length;
-        const lateCount = logs.filter(l => l.status === 'متأخر').length;
-        const presentCount = logs.filter(l => l.status === 'حاضر').length;
-
-        const rate = totalStudents > 0 ? ((presentCount + lateCount) / totalStudents) * 100 : 0;
+        const statusCounts = countAttendanceStatuses(logs);
 
         setStats({
           totalStudents,
-          absentToday: absentCount,
-          lateToday: lateCount,
-          attendanceRate: Math.round(rate),
+          absentToday: statusCounts.absent,
+          lateToday: statusCounts.late,
+          attendanceRate: computeDashboardAttendanceRate(
+            statusCounts.present,
+            statusCounts.late,
+            totalStudents
+          ),
         });
       } catch (err) {
         console.error(err);
