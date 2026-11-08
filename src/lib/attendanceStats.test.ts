@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { computeAttendanceRate, countAttendanceStatuses } from './attendanceStats';
+import {
+  computeAttendanceRate,
+  computeDashboardAttendanceRate,
+  countAttendanceStatuses,
+} from './attendanceStats';
 
 describe('countAttendanceStatuses', () => {
   it('aggregates Arabic attendance statuses', () => {
@@ -18,5 +22,12 @@ describe('computeAttendanceRate', () => {
   it('returns rounded percentage and guards zero total', () => {
     expect(computeAttendanceRate(7, 10)).toBe(70);
     expect(computeAttendanceRate(0, 0)).toBe(0);
+  });
+});
+
+describe('computeDashboardAttendanceRate', () => {
+  it('counts present and late toward the daily rate', () => {
+    expect(computeDashboardAttendanceRate(80, 5, 100)).toBe(85);
+    expect(computeDashboardAttendanceRate(0, 0, 0)).toBe(0);
   });
 });

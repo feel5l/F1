@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { filterStaffMembers } from '../lib/staffSearch';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -85,11 +86,7 @@ export default function Staff() {
     }
   };
 
-  const filteredStaff = staff.filter(member =>
-    member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (member.role || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.nationalId.includes(searchTerm)
-  );
+  const filteredStaff = filterStaffMembers(staff, searchTerm);
 
   const getRoleBadge = (role?: AppRole) => {
     switch (role) {
