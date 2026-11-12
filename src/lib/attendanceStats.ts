@@ -51,3 +51,14 @@ export function computeAttendanceRate(present: number, total: number): number {
   if (total <= 0) return 0;
   return Math.round((present / total) * 100);
 }
+
+/** Reports page rate: present + late + excused over filtered log rows. */
+export function computeReportAttendanceRate(
+  present: number,
+  late: number,
+  excused: number,
+  total: number
+): number {
+  if (total <= 0) return 0;
+  return Math.round(((present + late + excused) / total) * 100);
+}

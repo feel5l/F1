@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeAttendanceRate,
   computeDashboardAttendanceRate,
+  computeReportAttendanceRate,
   countAttendanceStatuses,
   summarizeDashboardLogStatuses,
 } from './attendanceStats';
@@ -38,5 +39,12 @@ describe('computeDashboardAttendanceRate', () => {
   it('treats late as attending and rounds percentage', () => {
     expect(computeDashboardAttendanceRate(8, 2, 20)).toBe(50);
     expect(computeDashboardAttendanceRate(0, 0, 0)).toBe(0);
+  });
+});
+
+describe('computeReportAttendanceRate', () => {
+  it('counts present, late, and excused toward attendance rate', () => {
+    expect(computeReportAttendanceRate(5, 2, 1, 10)).toBe(80);
+    expect(computeReportAttendanceRate(0, 0, 0, 0)).toBe(0);
   });
 });
