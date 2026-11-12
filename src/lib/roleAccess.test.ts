@@ -36,6 +36,11 @@ describe('canViewAllClasses', () => {
   it('denies plain teachers', () => {
     expect(canViewAllClasses(false, 'TEACHER')).toBe(false);
   });
+
+  it('allows teacher leaders and supervisors', () => {
+    expect(canViewAllClasses(false, 'TEACHER_LEADER')).toBe(true);
+    expect(canViewAllClasses(false, 'SUPERVISOR')).toBe(true);
+  });
 });
 
 describe('shouldBootstrapAdminRole', () => {

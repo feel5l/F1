@@ -26,6 +26,7 @@ import {
   Pie
 } from 'recharts';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
+import { computeReportAttendanceRate } from '../lib/attendanceStats';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -131,9 +132,9 @@ export default function Reports() {
       const absent = logsData.filter(l => l.status === 'غائب').length;
       const late = logsData.filter(l => l.status === 'متأخر').length;
       const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
+      const rate = computeReportAttendanceRate(present, late, excused, total);
 
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      setStats({ total, present, absent, late, excused, rate });
 
     } catch (err) {
       console.error(err);
