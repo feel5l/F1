@@ -5,6 +5,7 @@ import {
   computeReportAttendanceRate,
   countAttendanceStatuses,
   summarizeDashboardLogStatuses,
+  summarizeReportLogStats,
 } from './attendanceStats';
 
 describe('countAttendanceStatuses', () => {
@@ -39,6 +40,38 @@ describe('computeDashboardAttendanceRate', () => {
   it('treats late as attending and rounds percentage', () => {
     expect(computeDashboardAttendanceRate(8, 2, 20)).toBe(50);
     expect(computeDashboardAttendanceRate(0, 0, 0)).toBe(0);
+  });
+});
+
+describe('summarizeReportLogStats', () => {
+  it('aggregates counts and computed rate from logs', () => {
+    expect(
+      summarizeReportLogStats([
+        { status: 'حاضر' },
+        { status: 'حاضر' },
+        { status: 'غائب' },
+        { status: 'متأخر' },
+        { status: 'بعذر' },
+      ])
+    ).toEqual({
+      total: 5,
+      present: 2,
+      absent: 1,
+      late: 1,
+      excused: 1,
+      rate: 80,
+    });
+  });
+
+  it('returns zeros when there are no logs', () => {
+    expect(summarizeReportLogStats([])).toEqual({
+      total: 0,
+      present: 0,
+      absent: 0,
+      late: 0,
+      excused: 0,
+      rate: 0,
+    });
   });
 });
 

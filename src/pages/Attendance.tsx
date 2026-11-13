@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
-import { canViewAllClasses } from '../lib/roleAccess';
 import { countAttendanceStatuses } from '../lib/attendanceStats';
+import { filterClassesForAttendanceView } from '../lib/classScope';
+import { parseAttendancePeriod, validateAttendanceSubmit } from '../lib/attendanceSession';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -30,11 +31,9 @@ export default function Attendance() {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
-      if (canViewAllClasses(isAdmin, staffMember?.appRole)) {
-        setClasses(list);
-      } else {
-        setClasses(list.filter(c => c.teacherEmail === user?.email));
-      }
+      setClasses(
+        filterClassesForAttendanceView(list, isAdmin, staffMember?.appRole, user?.email)
+      );
     };
     if (user) fetchClasses();
   }, [user, isAdmin]);
@@ -74,7 +73,7 @@ export default function Attendance() {
   };
 
   const submitAttendance = async () => {
-    if (!selectedClass || !subject || !user?.email) {
+    if (!validateAttendanceSubmit({ selectedClass, subject, teacherEmail: user?.email })) {
       toast.error('يرجى ملء كافة البيانات');
       return;
     }
@@ -84,7 +83,7 @@ export default function Attendance() {
       // 1. Create session
       const sessionData = {
         date: serverTimestamp(),
-        period: parseInt(period),
+        period: parseAttendancePeriod(period),
         subject,
         classId: selectedClass,
         teacherEmail: user.email,

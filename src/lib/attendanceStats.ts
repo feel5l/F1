@@ -64,3 +64,25 @@ export function computeReportAttendanceRate(
   if (total <= 0) return 0;
   return Math.round(((present + late + excused) / total) * 100);
 }
+
+export interface ReportLogStats {
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  rate: number;
+}
+
+/** Aggregates Reports page KPIs from filtered attendance logs. */
+export function summarizeReportLogStats(
+  logs: ReadonlyArray<{ status: AttendanceStatus }>
+): ReportLogStats {
+  const total = logs.length;
+  const present = logs.filter((l) => l.status === 'حاضر').length;
+  const absent = logs.filter((l) => l.status === 'غائب').length;
+  const late = logs.filter((l) => l.status === 'متأخر').length;
+  const excused = logs.filter((l) => l.status === 'بعذر').length;
+  const rate = computeReportAttendanceRate(present, late, excused, total);
+  return { total, present, absent, late, excused, rate };
+}
