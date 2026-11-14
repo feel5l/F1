@@ -32,6 +32,11 @@ import {
   filterClassesForReportsView,
   filterLogsByDateRange,
 } from '../lib/reportAnalytics';
+import {
+  ATTENDANCE_REPORT_CSV_HEADERS,
+  buildAttendanceReportCsvRow,
+  serializeCsvTable,
+} from '../lib/csvExport';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -154,15 +159,15 @@ export default function Reports() {
   ].filter(d => d.value > 0);
 
   const exportCSV = () => {
-    const headers = ["التاريخ", "الطالب", "الحالة", "الملاحظات"];
-    const rows = logs.map(l => [
-      format(l.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
-      l.studentId, // Would be better to join name
-      l.status,
-      l.note || ""
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const rows = logs.map((l) =>
+      buildAttendanceReportCsvRow(
+        format(l.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
+        l.studentId,
+        l.status,
+        l.note
+      )
+    );
+    const csvContent = 'data:text/csv;charset=utf-8,' + serializeCsvTable(ATTENDANCE_REPORT_CSV_HEADERS, rows);
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

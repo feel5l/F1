@@ -15,6 +15,12 @@ import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from '
 import Papa from 'papaparse';
 import { filterStudentsForDirectory } from '../lib/studentDirectory';
 import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
+import {
+  STUDENT_CSV_HEADERS,
+  resolveStudentExportClassName,
+  buildStudentCsvRow,
+  serializeCsvTable,
+} from '../lib/csvExport';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -59,22 +65,11 @@ export default function Students() {
   }, []);
 
   const exportToCSV = () => {
-    const headers = ["المعرف", "الاسم الكامل", "الفصل", "اسم ولي الأمر", "هاتف ولي الأمر", "الحالة"];
-    const rows = students.map(s => {
-      const className = classes.find(c => c.id === s.classId)?.name || s.className || 'غير محدد';
-      const status = s.isActive ? 'نشط' : 'غير نشط';
-      return [
-        s.id,
-        s.fullName,
-        className,
-        s.guardianName || '-',
-        s.guardianPhone || '-',
-        status
-      ];
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
-      + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const rows = students.map((s) =>
+      buildStudentCsvRow(s, resolveStudentExportClassName(classes, s))
+    );
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + serializeCsvTable(STUDENT_CSV_HEADERS, rows, { utf8Bom: true });
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

@@ -9,6 +9,10 @@ import {
   computeDashboardAttendanceRate,
   summarizeDashboardLogStatuses,
 } from '../lib/attendanceStats';
+import {
+  teacherClassIdsFromClasses,
+  countStudentsAssignedToClasses,
+} from '../lib/dashboardScope';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -34,13 +38,21 @@ export default function Dashboard() {
           const studentsSnap = await getDocs(collection(db, 'students'));
           totalStudents = studentsSnap.size;
         } else {
-          // Get classes assigned to this teacher
-          const classesSnap = await getDocs(query(collection(db, 'classes'), where('teacherEmail', '==', user?.email)));
-          const classIds = classesSnap.docs.map(doc => doc.id);
-          
+          const classesSnap = await getDocs(
+            query(collection(db, 'classes'), where('teacherEmail', '==', user?.email))
+          );
+          const teacherClasses = classesSnap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          })) as { id: string; teacherEmail?: string }[];
+          const classIds = teacherClassIdsFromClasses(teacherClasses, user?.email);
+
           if (classIds.length > 0) {
-            const studentsSnap = await getDocs(query(collection(db, 'students'), where('classId', 'in', classIds)));
-            totalStudents = studentsSnap.size;
+            const studentsSnap = await getDocs(
+              query(collection(db, 'students'), where('classId', 'in', classIds))
+            );
+            const scopedStudents = studentsSnap.docs.map((d) => ({ classId: d.data().classId as string }));
+            totalStudents = countStudentsAssignedToClasses(scopedStudents, classIds);
           } else {
             totalStudents = 0;
           }
