@@ -14,7 +14,8 @@ import {
   Menu,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { getRoleLabel, isRoleAllowedForNav, resolveEffectiveRole } from '../lib/roleAccess';
+import { getRoleLabel, resolveEffectiveRole } from '../lib/roleAccess';
+import { NAV_ROUTE_ACCESS, visibleNavPathsForRole } from '../lib/navAccess';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,21 +31,24 @@ export default function Layout({ children }: LayoutProps) {
     navigate('/login');
   };
 
+  const rolesByPath = new Map(NAV_ROUTE_ACCESS.map((route) => [route.path, route.roles]));
+
   const navItems = [
-    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER', 'SUPERVISOR'] },
-    { name: 'إدارة الطلاب', path: '/students', icon: Users, roles: ['ADMIN', 'TEACHER_LEADER'] },
-    { name: 'الهيئة التعليمية', path: '/staff', icon: Users, roles: ['ADMIN', 'SUPERVISOR'] },
-    { name: 'إدارة الفصول', path: '/classes', icon: School, roles: ['ADMIN'] },
-    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck, roles: ['ADMIN', 'TEACHER', 'TEACHER_LEADER', 'ATTENDANCE_OFFICER'] },
-    { name: 'سجل الغياب', path: '/logs', icon: History, roles: ['ADMIN', 'ATTENDANCE_OFFICER', 'TEACHER_LEADER'] },
-    { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
-  ];
+    { name: 'لوحة التحكم', path: '/', icon: LayoutDashboard },
+    { name: 'إدارة الطلاب', path: '/students', icon: Users },
+    { name: 'الهيئة التعليمية', path: '/staff', icon: Users },
+    { name: 'إدارة الفصول', path: '/classes', icon: School },
+    { name: 'تحضير اليوم', path: '/attendance', icon: ClipboardCheck },
+    { name: 'سجل الغياب', path: '/logs', icon: History },
+    { name: 'التقارير', path: '/reports', icon: BarChart3 },
+  ].map((item) => ({
+    ...item,
+    roles: rolesByPath.get(item.path) ?? [],
+  }));
 
   const currentRole = resolveEffectiveRole(staffMember?.appRole, isAdmin);
-
-  const visibleNavItems = navItems.filter((item) =>
-    isRoleAllowedForNav(currentRole, item.roles)
-  );
+  const allowedPaths = new Set(visibleNavPathsForRole(currentRole));
+  const visibleNavItems = navItems.filter((item) => allowedPaths.has(item.path));
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4 px-3">
