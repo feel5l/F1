@@ -13,6 +13,14 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { filterStudentsForDirectory } from '../lib/studentDirectory';
+import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
+import {
+  STUDENT_CSV_HEADERS,
+  resolveStudentExportClassName,
+  buildStudentCsvRow,
+  serializeCsvTable,
+} from '../lib/csvExport';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -57,22 +65,11 @@ export default function Students() {
   }, []);
 
   const exportToCSV = () => {
-    const headers = ["المعرف", "الاسم الكامل", "الفصل", "اسم ولي الأمر", "هاتف ولي الأمر", "الحالة"];
-    const rows = students.map(s => {
-      const className = classes.find(c => c.id === s.classId)?.name || s.className || 'غير محدد';
-      const status = s.isActive ? 'نشط' : 'غير نشط';
-      return [
-        s.id,
-        s.fullName,
-        className,
-        s.guardianName || '-',
-        s.guardianPhone || '-',
-        status
-      ];
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
-      + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const rows = students.map((s) =>
+      buildStudentCsvRow(s, resolveStudentExportClassName(classes, s))
+    );
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + serializeCsvTable(STUDENT_CSV_HEADERS, rows, { utf8Bom: true });
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -161,25 +158,23 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
-          
+          const startIndex = csvImportStartIndex(data[0]?.[0]);
+          const selectedClass = classes.find(c => c.id === importClassId);
+
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
-            const row = data[i];
-            const name = row[0]?.trim();
-            if (name) {
-              const selectedClass = classes.find(c => c.id === importClassId);
-              await addDoc(collection(db, 'students'), {
-                fullName: name,
-                classId: importClassId,
-                className: selectedClass?.name || '',
-                guardianName: row[1]?.trim() || '',
-                guardianPhone: row[2]?.trim() || '',
-                parentEmail: row[3]?.trim() || '',
-                isActive: true,
-              });
-              count++;
-            }
+            const parsed = parseStudentImportRow(data[i]);
+            if (!parsed) continue;
+            await addDoc(collection(db, 'students'), {
+              fullName: parsed.fullName,
+              classId: importClassId,
+              className: selectedClass?.name || '',
+              guardianName: parsed.guardianName,
+              guardianPhone: parsed.guardianPhone,
+              parentEmail: parsed.parentEmail,
+              isActive: true,
+            });
+            count++;
           }
           
           toast.success(`تم استيراد ${count} طالباً بنجاح`);
@@ -202,11 +197,7 @@ export default function Students() {
     });
   };
 
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase());
-    const matchesClass = classFilter === 'all' || s.classId === classFilter;
-    return matchesSearch && matchesClass;
-  });
+  const filteredStudents = filterStudentsForDirectory<Student>(students, search, classFilter);
 
   return (
     <div className="space-y-6">

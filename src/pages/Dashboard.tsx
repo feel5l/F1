@@ -4,7 +4,15 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserMinus, Clock, CheckCircle2 } from 'lucide-react';
-import { Student, AttendanceLog } from '../types';
+import { AttendanceLog, AttendanceStatus } from '../types';
+import {
+  computeDashboardAttendanceRate,
+  summarizeDashboardLogStatuses,
+} from '../lib/attendanceStats';
+import {
+  teacherClassIdsFromClasses,
+  countStudentsAssignedToClasses,
+} from '../lib/dashboardScope';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -30,13 +38,21 @@ export default function Dashboard() {
           const studentsSnap = await getDocs(collection(db, 'students'));
           totalStudents = studentsSnap.size;
         } else {
-          // Get classes assigned to this teacher
-          const classesSnap = await getDocs(query(collection(db, 'classes'), where('teacherEmail', '==', user?.email)));
-          const classIds = classesSnap.docs.map(doc => doc.id);
-          
+          const classesSnap = await getDocs(
+            query(collection(db, 'classes'), where('teacherEmail', '==', user?.email))
+          );
+          const teacherClasses = classesSnap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          })) as { id: string; teacherEmail?: string }[];
+          const classIds = teacherClassIdsFromClasses(teacherClasses, user?.email);
+
           if (classIds.length > 0) {
-            const studentsSnap = await getDocs(query(collection(db, 'students'), where('classId', 'in', classIds)));
-            totalStudents = studentsSnap.size;
+            const studentsSnap = await getDocs(
+              query(collection(db, 'students'), where('classId', 'in', classIds))
+            );
+            const scopedStudents = studentsSnap.docs.map((d) => ({ classId: d.data().classId as string }));
+            totalStudents = countStudentsAssignedToClasses(scopedStudents, classIds);
           } else {
             totalStudents = 0;
           }
@@ -55,17 +71,19 @@ export default function Dashboard() {
         const logsSnap = await getDocs(logsQuery);
         const logs = logsSnap.docs.map(doc => doc.data() as AttendanceLog);
 
-        const absentCount = logs.filter(l => l.status === 'غائب').length;
-        const lateCount = logs.filter(l => l.status === 'متأخر').length;
-        const presentCount = logs.filter(l => l.status === 'حاضر').length;
-
-        const rate = totalStudents > 0 ? ((presentCount + lateCount) / totalStudents) * 100 : 0;
+        const statuses = logs.map((l) => l.status as AttendanceStatus);
+        const { presentCount, absentCount, lateCount } =
+          summarizeDashboardLogStatuses(statuses);
 
         setStats({
           totalStudents,
           absentToday: absentCount,
           lateToday: lateCount,
-          attendanceRate: Math.round(rate),
+          attendanceRate: computeDashboardAttendanceRate(
+            presentCount,
+            lateCount,
+            totalStudents
+          ),
         });
       } catch (err) {
         console.error(err);
