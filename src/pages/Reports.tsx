@@ -32,6 +32,7 @@ import {
   filterClassesForReportsView,
   filterLogsByDateRange,
 } from '../lib/reportAnalytics';
+import { shouldFilterAttendanceByTeacherEmail } from '../lib/teacherDataScope';
 import {
   ATTENDANCE_REPORT_CSV_HEADERS,
   buildAttendanceReportCsvRow,
@@ -100,8 +101,8 @@ export default function Reports() {
       let q = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'));
 
       // Role based filtering
-      if (!isAdmin && user?.email) {
-        q = query(q, where('teacherEmail', '==', user.email));
+      if (shouldFilterAttendanceByTeacherEmail(isAdmin, user?.email)) {
+        q = query(q, where('teacherEmail', '==', user!.email));
       }
 
       // Filter by Class

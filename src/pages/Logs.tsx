@@ -17,6 +17,7 @@ import {
   buildGuardianWhatsAppUrl,
   sanitizeGuardianPhone,
 } from '../lib/whatsappNotify';
+import { usesSchoolWideAttendanceLogQuery } from '../lib/teacherDataScope';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -31,7 +32,7 @@ export default function Logs() {
       setLoading(true);
       try {
         let logsQuery;
-        if (isAdmin) {
+        if (usesSchoolWideAttendanceLogQuery(isAdmin)) {
           logsQuery = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'), limit(100));
         } else {
           logsQuery = query(

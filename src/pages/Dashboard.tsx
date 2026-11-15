@@ -13,6 +13,7 @@ import {
   teacherClassIdsFromClasses,
   countStudentsAssignedToClasses,
 } from '../lib/dashboardScope';
+import { shouldFilterAttendanceByTeacherEmail } from '../lib/teacherDataScope';
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -60,8 +61,8 @@ export default function Dashboard() {
 
         // 2. Logs for today
         let queryConstraints = [where('timestamp', '>=', todayTS)];
-        if (!isAdmin && user?.email) {
-          queryConstraints.push(where('teacherEmail', '==', user.email));
+        if (shouldFilterAttendanceByTeacherEmail(isAdmin, user?.email)) {
+          queryConstraints.push(where('teacherEmail', '==', user!.email));
         }
 
         const logsQuery = query(
