@@ -1,0 +1,41 @@
+import { describe, it, expect } from 'vitest';
+import {
+  mustRedirectUnauthenticatedToLogin,
+  resolveAuthRoute,
+  SMOKE_PROTECTED_PATHS,
+} from './authRouting';
+
+describe('resolveAuthRoute', () => {
+  it('waits while auth is loading', () => {
+    expect(resolveAuthRoute('/', false, true)).toBe('loading');
+  });
+
+  it('shows login for guests on /login', () => {
+    expect(resolveAuthRoute('/login', false, false)).toBe('show-login');
+  });
+
+  it('sends signed-in users away from /login', () => {
+    expect(resolveAuthRoute('/login', true, false)).toBe('redirect-to-home');
+  });
+
+  it('redirects guests from protected shell to login', () => {
+    expect(resolveAuthRoute('/', false, false)).toBe('redirect-to-login');
+    expect(resolveAuthRoute('/attendance', false, false)).toBe('redirect-to-login');
+  });
+
+  it('allows authenticated users into the app shell', () => {
+    expect(resolveAuthRoute('/reports', true, false)).toBe('show-app');
+  });
+});
+
+describe('mustRedirectUnauthenticatedToLogin', () => {
+  it('matches Playwright smoke protected routes', () => {
+    for (const path of SMOKE_PROTECTED_PATHS) {
+      expect(mustRedirectUnauthenticatedToLogin(path)).toBe(true);
+    }
+  });
+
+  it('does not require redirect on login page', () => {
+    expect(mustRedirectUnauthenticatedToLogin('/login')).toBe(false);
+  });
+});
