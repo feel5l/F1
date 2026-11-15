@@ -22,6 +22,9 @@ describe('validateAttendanceSubmit', () => {
     expect(validateAttendanceSubmit({ selectedClass: 'c1', subject: 'x', teacherEmail: null })).toBe(
       false
     );
+    expect(
+      validateAttendanceSubmit({ selectedClass: 'c1', subject: 'x', teacherEmail: '   ' })
+    ).toBe(false);
   });
 });
 

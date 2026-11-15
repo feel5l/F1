@@ -5,7 +5,8 @@ export function mergeStaffWithRoleDoc(
   staff: StaffMember,
   roleData: { role?: string } | null | undefined
 ): StaffMember {
-  const role = roleData?.role as AppRole | undefined;
+  const rawRole = roleData?.role?.trim();
+  const role = rawRole ? (rawRole as AppRole) : undefined;
   if (role) return { ...staff, appRole: role };
   return staff;
 }
@@ -39,7 +40,8 @@ export function resolveStaffMemberAfterAuth(
   if (staffFromCollection) {
     return mergeStaffWithRoleDoc(staffFromCollection, roleData);
   }
-  const role = roleData?.role as AppRole | undefined;
+  const rawRole = roleData?.role?.trim();
+  const role = rawRole ? (rawRole as AppRole) : undefined;
   if (role) {
     return buildStaffFallbackFromRole(authEmail, displayName, role);
   }

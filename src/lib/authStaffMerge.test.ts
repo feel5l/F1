@@ -25,6 +25,10 @@ describe('mergeStaffWithRoleDoc', () => {
   it('keeps staff when roles doc is empty', () => {
     expect(mergeStaffWithRoleDoc(baseStaff, null).appRole).toBe('TEACHER');
   });
+
+  it('ignores blank role strings and keeps staff appRole', () => {
+    expect(mergeStaffWithRoleDoc(baseStaff, { role: '   ' }).appRole).toBe('TEACHER');
+  });
 });
 
 describe('resolveStaffMemberAfterAuth', () => {

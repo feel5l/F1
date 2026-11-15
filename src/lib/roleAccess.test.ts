@@ -48,6 +48,8 @@ describe('shouldBootstrapAdminRole', () => {
     expect(shouldBootstrapAdminRole(BOOTSTRAP_ADMIN_EMAIL, null)).toBe(true);
     expect(shouldBootstrapAdminRole(BOOTSTRAP_ADMIN_EMAIL, { role: 'ADMIN' })).toBe(false);
     expect(shouldBootstrapAdminRole('other@ghiabi.com', null)).toBe(false);
+    expect(shouldBootstrapAdminRole(BOOTSTRAP_ADMIN_EMAIL, { role: '   ' })).toBe(true);
+    expect(shouldBootstrapAdminRole(BOOTSTRAP_ADMIN_EMAIL, { role: 'TEACHER' })).toBe(false);
   });
 });
 

@@ -30,7 +30,8 @@ export function shouldBootstrapAdminRole(
   email: string | null | undefined,
   roleData: { role?: string } | null | undefined
 ): boolean {
-  return Boolean(email === BOOTSTRAP_ADMIN_EMAIL && !roleData?.role);
+  const existingRole = roleData?.role?.trim();
+  return Boolean(email === BOOTSTRAP_ADMIN_EMAIL && !existingRole);
 }
 
 export function resolveEffectiveRole(
