@@ -12,6 +12,13 @@ import { ar } from 'date-fns/locale';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import {
+  buildGuardianAttendanceMessage,
+  buildGuardianWhatsAppUrl,
+  sanitizeGuardianPhone,
+} from '../lib/whatsappNotify';
+import { usesSchoolWideAttendanceLogQuery } from '../lib/teacherDataScope';
+import { resolveAttendanceStatusDisplay } from '../lib/attendanceStatusDisplay';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -26,7 +33,7 @@ export default function Logs() {
       setLoading(true);
       try {
         let logsQuery;
-        if (isAdmin) {
+        if (usesSchoolWideAttendanceLogQuery(isAdmin)) {
           logsQuery = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'), limit(100));
         } else {
           logsQuery = query(
@@ -75,22 +82,21 @@ export default function Logs() {
 
     const date = log.timestamp instanceof Timestamp ? log.timestamp.toDate() : new Date();
     const formattedDate = format(date, 'PPP', { locale: ar });
-    const message = `السلام عليكم، نود إحاطتكم بظهور ابنكم/ابنتكم ${student.fullName} غائباً (أو متأخراً) عن مدرسة زيد بن ثابت اليوم ${formattedDate}. نرجو تزويدنا بالعذر. شكراً لكم.`;
-    
-    // Clean phone number (keep only digits)
-    const cleanPhone = student.guardianPhone.replace(/[^0-9]/g, '');
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const message = buildGuardianAttendanceMessage(student.fullName, formattedDate);
+    const cleanPhone = sanitizeGuardianPhone(student.guardianPhone);
+    const whatsappUrl = buildGuardianWhatsAppUrl(cleanPhone, message);
     window.open(whatsappUrl, '_blank');
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'حاضر': return <Badge className="bg-green-600">حاضر</Badge>;
-      case 'غائب': return <Badge variant="destructive">غائب</Badge>;
-      case 'متأخر': return <Badge className="bg-orange-500">متأخر</Badge>;
-      case 'بعذر': return <Badge className="bg-blue-500">بعذر</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+    const display = resolveAttendanceStatusDisplay(status);
+    if (display.destructive) {
+      return <Badge variant="destructive">{display.label}</Badge>;
     }
+    if (display.outline) {
+      return <Badge variant="outline">{display.label}</Badge>;
+    }
+    return <Badge className={display.badgeClassName}>{display.label}</Badge>;
   };
 
   return (
