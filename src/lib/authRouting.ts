@@ -13,6 +13,16 @@ export const SMOKE_PROTECTED_PATHS = [
   '/reports',
 ] as const;
 
+/** Deep-link routes probed by e2e/smoke_test.py (unauthenticated must land on /login). */
+export const SMOKE_E2E_GOTO_ROUTES = [
+  '/attendance',
+  '/students',
+  '/classes',
+  '/staff',
+  '/logs',
+  '/reports',
+] as const;
+
 export type AuthRouteDecision =
   | 'loading'
   | 'show-login'

@@ -29,6 +29,10 @@ describe('mergeStaffWithRoleDoc', () => {
   it('ignores blank role strings and keeps staff appRole', () => {
     expect(mergeStaffWithRoleDoc(baseStaff, { role: '   ' }).appRole).toBe('TEACHER');
   });
+
+  it('ignores spoofed role values not in AppRole whitelist', () => {
+    expect(mergeStaffWithRoleDoc(baseStaff, { role: 'SUPERADMIN' }).appRole).toBe('TEACHER');
+  });
 });
 
 describe('resolveStaffMemberAfterAuth', () => {
@@ -46,6 +50,10 @@ describe('resolveStaffMemberAfterAuth', () => {
 
   it('returns null when neither staff nor role exists', () => {
     expect(resolveStaffMemberAfterAuth(null, null, 'x@school.com', 'X')).toBeNull();
+  });
+
+  it('returns null when roles doc has a non-whitelisted role', () => {
+    expect(resolveStaffMemberAfterAuth(null, { role: 'ROOT' }, 'x@school.com', 'X')).toBeNull();
   });
 });
 

@@ -18,6 +18,7 @@ import {
   sanitizeGuardianPhone,
 } from '../lib/whatsappNotify';
 import { usesSchoolWideAttendanceLogQuery } from '../lib/teacherDataScope';
+import { resolveAttendanceStatusDisplay } from '../lib/attendanceStatusDisplay';
 
 export default function Logs() {
   const { user, isAdmin } = useAuth();
@@ -88,13 +89,14 @@ export default function Logs() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'حاضر': return <Badge className="bg-green-600">حاضر</Badge>;
-      case 'غائب': return <Badge variant="destructive">غائب</Badge>;
-      case 'متأخر': return <Badge className="bg-orange-500">متأخر</Badge>;
-      case 'بعذر': return <Badge className="bg-blue-500">بعذر</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+    const display = resolveAttendanceStatusDisplay(status);
+    if (display.destructive) {
+      return <Badge variant="destructive">{display.label}</Badge>;
     }
+    if (display.outline) {
+      return <Badge variant="outline">{display.label}</Badge>;
+    }
+    return <Badge className={display.badgeClassName}>{display.label}</Badge>;
   };
 
   return (

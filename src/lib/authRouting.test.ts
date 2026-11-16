@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   mustRedirectUnauthenticatedToLogin,
   resolveAuthRoute,
+  SMOKE_E2E_GOTO_ROUTES,
   SMOKE_PROTECTED_PATHS,
 } from './authRouting';
 
@@ -37,5 +38,23 @@ describe('mustRedirectUnauthenticatedToLogin', () => {
 
   it('does not require redirect on login page', () => {
     expect(mustRedirectUnauthenticatedToLogin('/login')).toBe(false);
+  });
+});
+
+describe('SMOKE_E2E_GOTO_ROUTES', () => {
+  it('matches Playwright smoke deep links and stays in protected set', () => {
+    expect(SMOKE_E2E_GOTO_ROUTES).toEqual([
+      '/attendance',
+      '/students',
+      '/classes',
+      '/staff',
+      '/logs',
+      '/reports',
+    ]);
+    for (const path of SMOKE_E2E_GOTO_ROUTES) {
+      expect(SMOKE_PROTECTED_PATHS).toContain(path);
+      expect(resolveAuthRoute(path, false, false)).toBe('redirect-to-login');
+    }
+    expect(SMOKE_PROTECTED_PATHS).toContain('/');
   });
 });
