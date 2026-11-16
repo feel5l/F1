@@ -1,12 +1,12 @@
 import type { AppRole, StaffMember } from '../types';
+import { parseAppRole } from './appRoleParse';
 
 /** Applies roles/{email} as source of truth over staff.appRole (AuthContext). */
 export function mergeStaffWithRoleDoc(
   staff: StaffMember,
   roleData: { role?: string } | null | undefined
 ): StaffMember {
-  const rawRole = roleData?.role?.trim();
-  const role = rawRole ? (rawRole as AppRole) : undefined;
+  const role = parseAppRole(roleData?.role);
   if (role) return { ...staff, appRole: role };
   return staff;
 }
@@ -40,8 +40,7 @@ export function resolveStaffMemberAfterAuth(
   if (staffFromCollection) {
     return mergeStaffWithRoleDoc(staffFromCollection, roleData);
   }
-  const rawRole = roleData?.role?.trim();
-  const role = rawRole ? (rawRole as AppRole) : undefined;
+  const role = parseAppRole(roleData?.role);
   if (role) {
     return buildStaffFallbackFromRole(authEmail, displayName, role);
   }

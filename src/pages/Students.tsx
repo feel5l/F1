@@ -15,6 +15,7 @@ import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from '
 import Papa from 'papaparse';
 import { filterStudentsForDirectory } from '../lib/studentDirectory';
 import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
+import { validateStudentImportPreflight } from '../lib/studentImportPreflight';
 import {
   STUDENT_CSV_HEADERS,
   resolveStudentExportClassName,
@@ -147,10 +148,15 @@ export default function Students() {
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !importClassId) {
-      if (!importClassId) toast.error('يرجى اختيار الفصل أولاً');
+    const preflight = validateStudentImportPreflight(importClassId, file);
+    if (preflight.ok === false) {
+      if (preflight.error === 'missing_class') {
+        toast.error('يرجى اختيار الفصل أولاً');
+      }
       return;
     }
+
+    if (!file) return;
 
     setImportLoading(true);
     Papa.parse(file, {

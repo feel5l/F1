@@ -29,6 +29,10 @@ describe('mergeStaffWithRoleDoc', () => {
   it('ignores blank role strings and keeps staff appRole', () => {
     expect(mergeStaffWithRoleDoc(baseStaff, { role: '   ' }).appRole).toBe('TEACHER');
   });
+
+  it('ignores invalid role values from Firestore', () => {
+    expect(mergeStaffWithRoleDoc(baseStaff, { role: 'SUPERADMIN' }).appRole).toBe('TEACHER');
+  });
 });
 
 describe('resolveStaffMemberAfterAuth', () => {
