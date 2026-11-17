@@ -18,6 +18,7 @@ import {
   parseAttendancePeriod,
   validateAttendanceSubmit,
 } from '../lib/attendanceSession';
+import { buildAttendanceLogWrites } from '../lib/attendancePersist';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -90,18 +91,16 @@ export default function Attendance() {
       const sessionRef = await addDoc(collection(db, 'sessions'), sessionData);
 
       // 2. Create logs
-      const logPromises = Object.entries(attendance).map(([studentId, d]) => {
-        const data = d as { status: AttendanceStatus; note: string };
-        return addDoc(collection(db, 'attendanceLogs'), {
-          studentId,
-          sessionId: sessionRef.id,
-          classId: selectedClass,
-          teacherEmail: user.email,
-          status: data.status,
-          note: data.note,
+      const logPromises = buildAttendanceLogWrites(attendance, {
+        sessionId: sessionRef.id,
+        classId: selectedClass,
+        teacherEmail: user.email!,
+      }).map((row) =>
+        addDoc(collection(db, 'attendanceLogs'), {
+          ...row,
           timestamp: serverTimestamp(),
-        });
-      });
+        })
+      );
 
       await Promise.all(logPromises);
       toast.success('تم تسجيل التحضير بنجاح');

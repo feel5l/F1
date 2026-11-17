@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
 import { normalizeSchoolEmail, shouldFallbackToGoogleRedirect } from '../lib/authUtils';
+import { resolvePasswordResetEmail } from '../lib/loginCredentials';
 import {
   Dialog,
   DialogContent,
@@ -76,7 +77,7 @@ export default function Login() {
   };
 
   const handleResetPassword = async () => {
-    const fullEmail = normalizeSchoolEmail(resetEmail);
+    const fullEmail = resolvePasswordResetEmail(resetEmail);
 
     if (!fullEmail) {
       toast.error('يرجى إدخال البريد الإلكتروني');

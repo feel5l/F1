@@ -26,6 +26,11 @@ describe('resolveAuthRoute', () => {
   it('allows authenticated users into the app shell', () => {
     expect(resolveAuthRoute('/reports', true, false)).toBe('show-app');
   });
+
+  it('treats /login subpaths like the login route', () => {
+    expect(resolveAuthRoute('/login/', false, false)).toBe('show-login');
+    expect(resolveAuthRoute('/login/oauth', true, false)).toBe('redirect-to-home');
+  });
 });
 
 describe('mustRedirectUnauthenticatedToLogin', () => {
@@ -37,5 +42,6 @@ describe('mustRedirectUnauthenticatedToLogin', () => {
 
   it('does not require redirect on login page', () => {
     expect(mustRedirectUnauthenticatedToLogin('/login')).toBe(false);
+    expect(mustRedirectUnauthenticatedToLogin('/login/callback')).toBe(false);
   });
 });

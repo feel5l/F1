@@ -32,4 +32,9 @@ describe('canAccessRoute', () => {
   it('allows unknown paths without explicit gate (App shell)', () => {
     expect(canAccessRoute('/login', 'TEACHER')).toBe(true);
   });
+
+  it('normalizes trailing slashes for gated routes', () => {
+    expect(canAccessRoute('/students/', 'TEACHER')).toBe(false);
+    expect(canAccessRoute('/attendance///', 'ATTENDANCE_OFFICER')).toBe(true);
+  });
 });
