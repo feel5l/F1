@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
   LineChart,
@@ -26,6 +26,18 @@ import {
   Pie
 } from 'recharts';
 import { AttendanceLog, Class, Student, AttendanceStatus } from '../types';
+import { summarizeReportLogStats } from '../lib/attendanceStats';
+import {
+  aggregateAttendanceLogsByDay,
+  filterClassesForReportsView,
+  filterLogsByDateRange,
+} from '../lib/reportAnalytics';
+import { shouldFilterAttendanceByTeacherEmail } from '../lib/teacherDataScope';
+import {
+  ATTENDANCE_REPORT_CSV_HEADERS,
+  buildAttendanceReportCsvRow,
+  serializeCsvTable,
+} from '../lib/csvExport';
 import { Download, Calendar as CalendarIcon, Filter, Search, Loader2 } from 'lucide-react';
 
 const STATUS_COLORS: Record<AttendanceStatus, string> = {
@@ -36,7 +48,7 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
 };
 
 export default function Reports() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, staffMember } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -60,17 +72,13 @@ export default function Reports() {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         
-        if (isAdmin) {
-          setClasses(classList);
-        } else {
-          setClasses(classList.filter(c => c.teacherEmail === user?.email));
-        }
+        setClasses(filterClassesForReportsView(classList, isAdmin, user?.email, staffMember?.appRole));
       } catch (err) {
         console.error(err);
       }
     };
     if (user) fetchInitialData();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, staffMember?.appRole]);
 
   useEffect(() => {
     if (selectedClass === 'all') {
@@ -93,8 +101,8 @@ export default function Reports() {
       let q = query(collection(db, 'attendanceLogs'), orderBy('timestamp', 'desc'));
 
       // Role based filtering
-      if (!isAdmin && user?.email) {
-        q = query(q, where('teacherEmail', '==', user.email));
+      if (shouldFilterAttendanceByTeacherEmail(isAdmin, user?.email)) {
+        q = query(q, where('teacherEmail', '==', user!.email));
       }
 
       // Filter by Class
@@ -110,30 +118,11 @@ export default function Reports() {
       const snap = await getDocs(q);
       let logsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AttendanceLog));
 
-      // Filter by Date Range (client-side for simplicity since we want relative ranges)
-      const now = new Date();
-      if (dateRange === 'today') {
-        const start = startOfDay(now);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      } else if (dateRange === 'week') {
-        const start = subDays(now, 7);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      } else if (dateRange === 'month') {
-        const start = startOfMonth(now);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      }
+      logsData = filterLogsByDateRange(logsData, dateRange, new Date());
 
       setLogs(logsData);
 
-      // Calculate Stats
-      const total = logsData.length;
-      const present = logsData.filter(l => l.status === 'حاضر').length;
-      const absent = logsData.filter(l => l.status === 'غائب').length;
-      const late = logsData.filter(l => l.status === 'متأخر').length;
-      const excused = logsData.filter(l => l.status === 'بعذر').length;
-      const rate = total > 0 ? ((present + late + excused) / total) * 100 : 0;
-
-      setStats({ total, present, absent, late, excused, rate: Math.round(rate) });
+      setStats(summarizeReportLogStats(logsData));
 
     } catch (err) {
       console.error(err);
@@ -154,20 +143,14 @@ export default function Reports() {
   }, [selectedClass, selectedStudent, dateRange]);
 
   // Chart Data: Trends by Date
-  const trendData = React.useMemo(() => {
-    const daily: Record<string, { date: string; dateObj: Date; حاضر: number; غائب: number; متأخر: number; بعذر: number }> = {};
-    
-    logs.forEach(log => {
-      const d = log.timestamp.toDate();
-      const key = format(d, 'yyyy-MM-dd');
-      if (!daily[key]) {
-        daily[key] = { date: format(d, 'MMM d', { locale: ar }), dateObj: d, حاضر: 0, غائب: 0, متأخر: 0, بعذر: 0 };
-      }
-      daily[key][log.status]++;
-    });
-
-    return Object.values(daily).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
-  }, [logs]);
+  const trendData = React.useMemo(
+    () =>
+      aggregateAttendanceLogsByDay(logs).map((row) => ({
+        ...row,
+        date: format(row.dateObj, 'MMM d', { locale: ar }),
+      })),
+    [logs]
+  );
 
   const pieData = [
     { name: 'حاضر', value: stats.present, color: STATUS_COLORS['حاضر'] },
@@ -177,15 +160,15 @@ export default function Reports() {
   ].filter(d => d.value > 0);
 
   const exportCSV = () => {
-    const headers = ["التاريخ", "الطالب", "الحالة", "الملاحظات"];
-    const rows = logs.map(l => [
-      format(l.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
-      l.studentId, // Would be better to join name
-      l.status,
-      l.note || ""
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const rows = logs.map((l) =>
+      buildAttendanceReportCsvRow(
+        format(l.timestamp.toDate(), 'yyyy-MM-dd HH:mm'),
+        l.studentId,
+        l.status,
+        l.note
+      )
+    );
+    const csvContent = 'data:text/csv;charset=utf-8,' + serializeCsvTable(ATTENDANCE_REPORT_CSV_HEADERS, rows);
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
