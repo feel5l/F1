@@ -48,7 +48,7 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
 };
 
 export default function Reports() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, staffMember } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -72,13 +72,13 @@ export default function Reports() {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         
-        setClasses(filterClassesForReportsView(classList, isAdmin, user?.email));
+        setClasses(filterClassesForReportsView(classList, isAdmin, user?.email, staffMember?.appRole));
       } catch (err) {
         console.error(err);
       }
     };
     if (user) fetchInitialData();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, staffMember?.appRole]);
 
   useEffect(() => {
     if (selectedClass === 'all') {

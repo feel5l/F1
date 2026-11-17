@@ -16,6 +16,7 @@ import Papa from 'papaparse';
 import { filterStudentsForDirectory } from '../lib/studentDirectory';
 import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
 import { validateStudentImportPreflight } from '../lib/studentImportPreflight';
+import { validateStudentForm } from '../lib/studentForm';
 import {
   STUDENT_CSV_HEADERS,
   resolveStudentExportClassName,
@@ -109,7 +110,7 @@ export default function Students() {
   };
 
   const handleSave = async () => {
-    if (!formData.fullName || !formData.classId) {
+    if (!validateStudentForm(formData)) {
       toast.error('يرجى إكمال البيانات الأساسية');
       return;
     }

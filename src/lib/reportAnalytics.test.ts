@@ -65,4 +65,16 @@ describe('filterClassesForReportsView', () => {
   it('returns empty when teacher email missing', () => {
     expect(filterClassesForReportsView(classes, false, null)).toEqual([]);
   });
+
+  it('shows all classes for attendance officer (aligned with attendance page)', () => {
+    expect(filterClassesForReportsView(classes, false, 't1@ghiabi.com', 'ATTENDANCE_OFFICER')).toHaveLength(
+      2
+    );
+  });
+
+  it('scopes plain teachers to their classes', () => {
+    expect(filterClassesForReportsView(classes, false, 't1@ghiabi.com', 'TEACHER')).toEqual([
+      classes[0],
+    ]);
+  });
 });

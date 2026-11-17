@@ -1,5 +1,6 @@
 import { format, startOfDay, startOfMonth, subDays } from 'date-fns';
-import type { AttendanceStatus } from '../types';
+import type { AppRole, AttendanceStatus } from '../types';
+import { canViewAllClasses } from './roleAccess';
 
 export type ReportDateRange = 'today' | 'week' | 'month' | 'all';
 
@@ -63,13 +64,14 @@ export function aggregateAttendanceLogsByDay(
   return Object.values(daily).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 }
 
-/** Class list scope for non-admin report views (matches Reports.tsx). */
+/** Class list scope for report views (aligned with attendance class scope). */
 export function filterClassesForReportsView<T extends { teacherEmail?: string }>(
   classes: readonly T[],
   isAdmin: boolean,
-  teacherEmail?: string | null
+  teacherEmail?: string | null,
+  appRole?: AppRole
 ): T[] {
-  if (isAdmin) return [...classes];
+  if (canViewAllClasses(isAdmin, appRole)) return [...classes];
   if (!teacherEmail) return [];
   return classes.filter((c) => c.teacherEmail === teacherEmail);
 }

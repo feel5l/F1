@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { parseAttendancePeriod, validateAttendanceSubmit } from './attendanceSession';
+import {
+  buildDefaultAttendanceMap,
+  parseAttendancePeriod,
+  validateAttendanceSubmit,
+} from './attendanceSession';
 
 describe('validateAttendanceSubmit', () => {
   it('requires class, subject, and teacher email', () => {
@@ -25,6 +29,19 @@ describe('validateAttendanceSubmit', () => {
     expect(
       validateAttendanceSubmit({ selectedClass: 'c1', subject: 'x', teacherEmail: '   ' })
     ).toBe(false);
+  });
+});
+
+describe('buildDefaultAttendanceMap', () => {
+  it('marks every student present with empty note', () => {
+    expect(buildDefaultAttendanceMap(['s1', 's2'])).toEqual({
+      s1: { status: 'حاضر', note: '' },
+      s2: { status: 'حاضر', note: '' },
+    });
+  });
+
+  it('returns empty map for empty roster', () => {
+    expect(buildDefaultAttendanceMap([])).toEqual({});
   });
 });
 

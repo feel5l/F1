@@ -16,3 +16,16 @@ export function parseAttendancePeriod(period: string): number {
   const n = parseInt(period, 10);
   return Number.isFinite(n) && n > 0 ? n : 2;
 }
+
+export type DefaultAttendanceEntry = { status: 'حاضر'; note: string };
+
+/** Default present status for each student when loading a class roster. */
+export function buildDefaultAttendanceMap(
+  studentIds: readonly string[]
+): Record<string, DefaultAttendanceEntry> {
+  const map: Record<string, DefaultAttendanceEntry> = {};
+  for (const id of studentIds) {
+    map[id] = { status: 'حاضر', note: '' };
+  }
+  return map;
+}

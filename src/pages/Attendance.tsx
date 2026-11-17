@@ -13,7 +13,11 @@ import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
 import { countAttendanceStatuses } from '../lib/attendanceStats';
 import { filterClassesForAttendanceView } from '../lib/classScope';
-import { parseAttendancePeriod, validateAttendanceSubmit } from '../lib/attendanceSession';
+import {
+  buildDefaultAttendanceMap,
+  parseAttendancePeriod,
+  validateAttendanceSubmit,
+} from '../lib/attendanceSession';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -47,12 +51,7 @@ export default function Attendance() {
       const studentList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
       setStudents(studentList);
       
-      // Initialize attendance with default "Present"
-      const initial: typeof attendance = {};
-      studentList.forEach(s => {
-        initial[s.id] = { status: 'حاضر', note: '' };
-      });
-      setAttendance(initial);
+      setAttendance(buildDefaultAttendanceMap(studentList.map((s) => s.id)));
       setLoading(false);
     };
     fetchStudents();
