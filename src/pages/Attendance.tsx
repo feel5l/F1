@@ -11,6 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Class, Student, AttendanceStatus } from '../types';
+import { countAttendanceStatuses } from '../lib/attendanceStats';
+import { filterClassesForAttendanceView } from '../lib/classScope';
+import {
+  buildDefaultAttendanceMap,
+  parseAttendancePeriod,
+  validateAttendanceSubmit,
+} from '../lib/attendanceSession';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -28,14 +35,9 @@ export default function Attendance() {
       const snap = await getDocs(collection(db, 'classes'));
       const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
       
-      const role = staffMember?.appRole;
-      const canSeeAll = isAdmin || role === 'ATTENDANCE_OFFICER' || role === 'TEACHER_LEADER' || role === 'SUPERVISOR';
-      
-      if (canSeeAll) {
-        setClasses(list);
-      } else {
-        setClasses(list.filter(c => c.teacherEmail === user?.email));
-      }
+      setClasses(
+        filterClassesForAttendanceView(list, isAdmin, staffMember?.appRole, user?.email)
+      );
     };
     if (user) fetchClasses();
   }, [user, isAdmin]);
@@ -49,12 +51,7 @@ export default function Attendance() {
       const studentList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
       setStudents(studentList);
       
-      // Initialize attendance with default "Present"
-      const initial: typeof attendance = {};
-      studentList.forEach(s => {
-        initial[s.id] = { status: 'حاضر', note: '' };
-      });
-      setAttendance(initial);
+      setAttendance(buildDefaultAttendanceMap(studentList.map((s) => s.id)));
       setLoading(false);
     };
     fetchStudents();
@@ -75,7 +72,7 @@ export default function Attendance() {
   };
 
   const submitAttendance = async () => {
-    if (!selectedClass || !subject || !user?.email) {
+    if (!validateAttendanceSubmit({ selectedClass, subject, teacherEmail: user?.email })) {
       toast.error('يرجى ملء كافة البيانات');
       return;
     }
@@ -85,7 +82,7 @@ export default function Attendance() {
       // 1. Create session
       const sessionData = {
         date: serverTimestamp(),
-        period: parseInt(period),
+        period: parseAttendancePeriod(period),
         subject,
         classId: selectedClass,
         teacherEmail: user.email,
@@ -118,13 +115,7 @@ export default function Attendance() {
   };
 
   const attendanceList = Object.values(attendance) as { status: AttendanceStatus; note: string }[];
-
-  const stats = {
-    present: attendanceList.filter((a) => a.status === 'حاضر').length,
-    absent: attendanceList.filter((a) => a.status === 'غائب').length,
-    late: attendanceList.filter((a) => a.status === 'متأخر').length,
-    excused: attendanceList.filter((a) => a.status === 'بعذر').length,
-  };
+  const stats = countAttendanceStatuses(attendanceList);
 
   return (
     <div className="space-y-6">
