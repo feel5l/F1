@@ -55,4 +55,9 @@ describe('parseAttendancePeriod', () => {
     expect(parseAttendancePeriod('abc')).toBe(2);
     expect(parseAttendancePeriod('0')).toBe(2);
   });
+
+  it('clamps periods above the Firestore maximum', () => {
+    expect(parseAttendancePeriod('11')).toBe(10);
+    expect(parseAttendancePeriod('99')).toBe(10);
+  });
 });

@@ -1,3 +1,5 @@
+import { SESSION_PERIOD_MAX, SESSION_PERIOD_MIN } from './firestoreContracts';
+
 export interface AttendanceSubmitInput {
   selectedClass: string;
   subject: string;
@@ -11,10 +13,12 @@ export function validateAttendanceSubmit(input: AttendanceSubmitInput): boolean 
   );
 }
 
-/** Parses period input; defaults to 2 when invalid (matches Attendance UI default). */
+/** Parses period input; defaults to 2 when invalid and clamps to Firestore rule bounds. */
 export function parseAttendancePeriod(period: string): number {
   const n = parseInt(period, 10);
-  return Number.isFinite(n) && n > 0 ? n : 2;
+  if (!Number.isFinite(n) || n < SESSION_PERIOD_MIN) return 2;
+  if (n > SESSION_PERIOD_MAX) return SESSION_PERIOD_MAX;
+  return n;
 }
 
 export type DefaultAttendanceEntry = { status: 'حاضر'; note: string };

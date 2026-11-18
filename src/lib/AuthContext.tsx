@@ -3,7 +3,8 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { StaffMember, AppRole } from '../types';
+import { StaffMember } from '../types';
+import { buildAdminBootstrapRoleDoc } from './adminBootstrapRole';
 import { deriveAuthRoleFlags, shouldBootstrapAdminRole } from './roleAccess';
 import { resolveStaffMemberAfterAuth } from './authStaffMerge';
 
@@ -44,9 +45,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const roleSnap = await getDoc(roleRef);
           let roleData = roleSnap.exists() ? roleSnap.data() : null;
           if (shouldBootstrapAdminRole(authUser.email, roleData)) {
-            await setDoc(roleRef, { role: 'ADMIN' as AppRole });
+            const bootstrapDoc = buildAdminBootstrapRoleDoc();
+            await setDoc(roleRef, bootstrapDoc);
             toast.success('تم تفعيل صلاحيات المدير بنجاح في قاعدة البيانات');
-            roleData = { role: 'ADMIN' };
+            roleData = bootstrapDoc;
           }
 
           const staffFromCollection = querySnapshot.empty
