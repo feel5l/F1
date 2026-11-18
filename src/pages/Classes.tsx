@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
+import { coerceTeacherEmailSelect, sortClassesByArabicName } from '../lib/classAdmin';
 
 export default function Classes() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -36,8 +37,7 @@ export default function Classes() {
     try {
       const classSnap = await getDocs(collection(db, 'classes'));
       const list = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
-      list.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
-      setClasses(list);
+      setClasses(sortClassesByArabicName(list));
 
       const staffSnap = await getDocs(query(collection(db, 'staff'), orderBy('fullName')));
       const staffList = staffSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as StaffMember));
@@ -181,7 +181,11 @@ export default function Classes() {
               <Label>المعلم</Label>
               <Select 
                 value={editingClass?.teacherEmail || "none"} 
-                onValueChange={(val) => setEditingClass(prev => prev ? { ...prev, teacherEmail: val === "none" ? "" : val } : null)}
+                onValueChange={(val) =>
+                  setEditingClass((prev) =>
+                    prev ? { ...prev, teacherEmail: coerceTeacherEmailSelect(val) } : null
+                  )
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر معلماً" />
