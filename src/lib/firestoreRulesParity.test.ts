@@ -54,4 +54,30 @@ describe('firestore.rules parity (client constants)', () => {
     expect(rules).toMatch(/resource\.data\.teacherEmail == request\.auth\.token\.email/);
     expect(rules).toMatch(/incoming\(\)\.teacherEmail == request\.auth\.token\.email/);
   });
+
+  it('restricts staff mutations to admins with isValidStaff', () => {
+    expect(rules).toMatch(/match \/staff\/\{staffId\}/);
+    expect(rules).toMatch(/allow write: if isAdmin\(\) && isValidStaff\(incoming\(\)\)/);
+  });
+
+  it('limits student writes to admin or teacher leader', () => {
+    expect(rules).toMatch(/match \/students\/\{studentId\}/);
+    expect(rules).toMatch(/allow write: if \(isAdmin\(\) \|\| isTeacherLeader\(\)\) && isValidStudent\(incoming\(\)\)/);
+  });
+
+  it('keeps attendance log writes tied to teacherEmail for non-privileged roles', () => {
+    expect(rules).toMatch(/match \/attendanceLogs\/\{logId\}/);
+    expect(rules).toMatch(/allow create: if isSignedIn\(\) && \(isAttendanceOfficer\(\) \|\| isTeacherLeader\(\) \|\| isAdmin\(\) \|\| incoming\(\)\.teacherEmail == request\.auth\.token\.email\)/);
+  });
+
+  it('defaults to deny-all for unmatched paths', () => {
+    expect(rules).toMatch(/match \/\{document=\*\*\} \{/);
+    expect(rules).toMatch(/allow read, write: if false/);
+  });
+
+  it('uses isBootstrapAdminEmail helper aligned with BOOTSTRAP_ADMIN_EMAIL', () => {
+    expect(rules).toMatch(/function isBootstrapAdminEmail\(\)/);
+    expect(rules).toContain(`'${BOOTSTRAP_ADMIN_EMAIL}'`);
+    expect(rules).toMatch(/isBootstrapAdminEmail\(\)/);
+  });
 });

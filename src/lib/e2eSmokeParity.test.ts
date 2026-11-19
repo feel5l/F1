@@ -31,3 +31,18 @@ describe('e2e/smoke_test.py auth redirect contract', () => {
     expect(smoke).toMatch(/نسيت كلمة المرور/);
   });
 });
+
+describe('Login.tsx selectors required by e2e/smoke_test.py', () => {
+  const login = readFileSync(resolve(__dirname, '../pages/Login.tsx'), 'utf8');
+
+  it('exposes stable element ids and button labels probed by Playwright', () => {
+    expect(login).toMatch(/id="email"/);
+    expect(login).toMatch(/id="password"/);
+    expect(login).toMatch(/id="resetEmail"/);
+    expect(login).toMatch(/غيابي - Ghiyabi/);
+    expect(login).toMatch(/الدخول السريع عبر حساب جوجل/);
+    expect(login).toMatch(/تسجيل الدخول/);
+    expect(login).toMatch(/نسيت كلمة المرور/);
+    expect(login).toMatch(/إلغاء/);
+  });
+});
