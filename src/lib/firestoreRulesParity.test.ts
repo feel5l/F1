@@ -39,4 +39,19 @@ describe('firestore.rules parity (client constants)', () => {
     expect(rules).toMatch(/incoming\(\)\.role == 'ADMIN'/);
     expect(rules).toMatch(/roleEmail == request\.auth\.token\.email/);
   });
+
+  it('restricts roles reads to document owner or admin (feat(auth) merge)', () => {
+    expect(rules).toMatch(/match \/roles\/\{roleEmail\}/);
+    expect(rules).toMatch(/request\.auth\.token\.email == roleEmail \|\| isAdmin\(\)/);
+  });
+
+  it('prevents non-admin session teacherEmail hijack on update', () => {
+    expect(rules).toMatch(/match \/sessions\/\{sessionId\}/);
+    expect(rules).toMatch(/incoming\(\)\.teacherEmail == existing\(\)\.teacherEmail/);
+  });
+
+  it('allows teachers to manage only their own sessions/logs by email', () => {
+    expect(rules).toMatch(/resource\.data\.teacherEmail == request\.auth\.token\.email/);
+    expect(rules).toMatch(/incoming\(\)\.teacherEmail == request\.auth\.token\.email/);
+  });
 });
