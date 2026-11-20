@@ -23,4 +23,13 @@ describe('parseStudentImportRow', () => {
     expect(parseStudentImportRow(['', 'x'])).toBeNull();
     expect(parseStudentImportRow(['   '])).toBeNull();
   });
+
+  it('treats missing optional columns as empty strings', () => {
+    expect(parseStudentImportRow(['علي'])).toEqual({
+      fullName: 'علي',
+      guardianName: '',
+      guardianPhone: '',
+      parentEmail: '',
+    });
+  });
 });

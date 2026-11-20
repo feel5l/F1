@@ -30,6 +30,12 @@ describe('e2e/smoke_test.py auth redirect contract', () => {
     expect(smoke).toMatch(/#resetEmail/);
     expect(smoke).toMatch(/نسيت كلمة المرور/);
   });
+
+  it('opens and dismisses reset dialog without submitting the login form', () => {
+    expect(smoke).toMatch(/get_by_role\("button", name="نسيت كلمة المرور\؟"\)/);
+    expect(smoke).toMatch(/get_by_role\("button", name="إلغاء"\)/);
+    expect(smoke).not.toMatch(/تسجيل الدخول"\)\.click/);
+  });
 });
 
 describe('Login.tsx selectors required by e2e/smoke_test.py', () => {

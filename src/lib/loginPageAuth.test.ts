@@ -17,4 +17,13 @@ describe('Login.tsx auth wiring', () => {
   it('handles Google redirect completion on mount', () => {
     expect(source).toMatch(/getRedirectResult/);
   });
+
+  it('keeps password-reset controls out of the login form submit path (merged PR #2)', () => {
+    expect(source).toMatch(/const handleResetPassword = async/);
+    expect(source).toMatch(/resolvePasswordResetEmail\(resetEmail\)/);
+    expect(source).toMatch(/sendPasswordResetEmail\(auth, fullEmail\)/);
+    const buttonTypeCount = source.match(/type="button"/g)?.length ?? 0;
+    expect(buttonTypeCount).toBeGreaterThanOrEqual(3);
+    expect(source).not.toMatch(/onClick=\{handleResetPassword\}[^>]*type="submit"/);
+  });
 });
