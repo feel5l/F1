@@ -57,4 +57,11 @@ describe('buildStaffFallbackFromRole', () => {
   it('uses display name when provided', () => {
     expect(buildStaffFallbackFromRole('e@x.com', 'علي', 'TEACHER').fullName).toBe('علي');
   });
+
+  it('provides empty nationalId until a full staff record is created (isValidStaff)', () => {
+    const fallback = buildStaffFallbackFromRole('user@ghiabi.com', null, 'TEACHER_LEADER');
+    expect(fallback.nationalId).toBe('');
+    expect(fallback.email).toBe('user@ghiabi.com');
+    expect(fallback.appRole).toBe('TEACHER_LEADER');
+  });
 });

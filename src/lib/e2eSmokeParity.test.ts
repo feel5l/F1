@@ -45,4 +45,10 @@ describe('Login.tsx selectors required by e2e/smoke_test.py', () => {
     expect(login).toMatch(/نسيت كلمة المرور/);
     expect(login).toMatch(/إلغاء/);
   });
+
+  it('keeps username-or-email login affordances from merged auth UX changes', () => {
+    expect(login).toMatch(/اسم المستخدم أو البريد الإلكتروني/);
+    expect(login).toMatch(/placeholder="zayd12345"/);
+    expect(login).toMatch(/placeholder="zayd12345 أو example@ghiabi\.com"/);
+  });
 });

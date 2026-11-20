@@ -9,4 +9,10 @@ describe('buildRolesCollectionRolePayload', () => {
       updatedAt: at,
     });
   });
+
+  it('defaults updatedAt to a Date when omitted (admin Staff.tsx path)', () => {
+    const payload = buildRolesCollectionRolePayload('ADMIN');
+    expect(payload.role).toBe('ADMIN');
+    expect(payload.updatedAt).toBeInstanceOf(Date);
+  });
 });
