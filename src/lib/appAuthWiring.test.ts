@@ -23,4 +23,9 @@ describe('App.tsx auth routing wiring', () => {
     expect(source).not.toMatch(/\{user\s*\?/);
     expect(source).not.toMatch(/!user\s*&&/);
   });
+
+  it('blocks the route tree while auth is loading (uses /login probe decision)', () => {
+    expect(source).toMatch(/if \(loginDecision === 'loading'\) return null/);
+    expect(source).toMatch(/resolveAuthRoute\('\/login', Boolean\(user\), loading\)/);
+  });
 });

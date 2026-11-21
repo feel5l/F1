@@ -5,6 +5,7 @@ import {
   SMOKE_PROTECTED_PATHS,
   mustRedirectUnauthenticatedToLogin,
 } from './authRouting';
+import { NAV_ROUTE_ACCESS } from './navAccess';
 
 function extractSmokeLoopRoutes(smokeSource: string): string[] {
   const match = smokeSource.match(/for route in \[([^\]]+)\]/);
@@ -19,6 +20,11 @@ describe('e2e/smoke_test.py auth redirect contract', () => {
   it('keeps Playwright loop routes in sync with SMOKE_PROTECTED_PATHS', () => {
     const fromConstant = SMOKE_PROTECTED_PATHS.filter((p) => p !== '/');
     expect([...loopRoutes].sort()).toEqual([...fromConstant].sort());
+  });
+
+  it('covers every non-dashboard nav destination in the smoke redirect loop', () => {
+    const navPaths = NAV_ROUTE_ACCESS.map((route) => route.path).filter((p) => p !== '/');
+    expect([...loopRoutes].sort()).toEqual([...navPaths].sort());
   });
 
   it('verifies unauthenticated root redirect (smoke opens / before the loop)', () => {

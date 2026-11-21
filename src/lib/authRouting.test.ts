@@ -31,6 +31,16 @@ describe('resolveAuthRoute', () => {
     expect(resolveAuthRoute('/login/', false, false)).toBe('show-login');
     expect(resolveAuthRoute('/login/oauth', true, false)).toBe('redirect-to-home');
   });
+
+  it('blocks login and shell via loading while auth session is resolving', () => {
+    for (const hasUser of [true, false]) {
+      expect(resolveAuthRoute('/login', hasUser, true)).toBe('loading');
+    }
+    for (const path of SMOKE_PROTECTED_PATHS) {
+      expect(resolveAuthRoute(path, false, true)).toBe('loading');
+      expect(resolveAuthRoute(path, true, true)).toBe('loading');
+    }
+  });
 });
 
 describe('mustRedirectUnauthenticatedToLogin', () => {
