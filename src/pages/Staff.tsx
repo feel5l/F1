@@ -27,6 +27,9 @@ import {
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { filterStaffMembers } from '../lib/staffSearch';
+import { buildRolesCollectionRolePayload } from '../lib/staffRoleSync';
+import { resolveStaffRoleBadgeMeta } from '../lib/staffRoleDisplay';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -70,10 +73,7 @@ export default function Staff() {
       // Sync with global roles collection for Firestore rules efficiency
       if (editingMember.email) {
         const roleRef = doc(db, 'roles', editingMember.email);
-        await setDoc(roleRef, {
-          role: newRole,
-          updatedAt: new Date()
-        });
+        await setDoc(roleRef, buildRolesCollectionRolePayload(newRole));
       }
 
       toast.success('تم تحديث الدور بنجاح');
@@ -85,21 +85,15 @@ export default function Staff() {
     }
   };
 
-  const filteredStaff = staff.filter(member =>
-    member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (member.role || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.nationalId.includes(searchTerm)
-  );
+  const filteredStaff = filterStaffMembers(staff, searchTerm);
 
   const getRoleBadge = (role?: AppRole) => {
-    switch (role) {
-      case 'ADMIN': return <Badge className="bg-red-100 text-red-800 border-red-200">مدير نظام</Badge>;
-      case 'TEACHER': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">معلم</Badge>;
-      case 'TEACHER_LEADER': return <Badge className="bg-purple-100 text-purple-800 border-purple-200">رائد نشاط</Badge>;
-      case 'ATTENDANCE_OFFICER': return <Badge className="bg-green-100 text-green-800 border-green-200">مسؤول غياب</Badge>;
-      case 'SUPERVISOR': return <Badge className="bg-amber-100 text-amber-800 border-amber-200">مشرف</Badge>;
-      default: return <Badge variant="outline">غير محدد</Badge>;
-    }
+    const meta = resolveStaffRoleBadgeMeta(role);
+    return meta.variant === 'outline' ? (
+      <Badge variant="outline">{meta.label}</Badge>
+    ) : (
+      <Badge className={meta.className}>{meta.label}</Badge>
+    );
   };
 
   return (
