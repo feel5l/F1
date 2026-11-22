@@ -25,6 +25,14 @@ describe('deriveAuthRoleFlags', () => {
       isSupervisor: true,
     });
   });
+
+  it('does not treat attendance officers as teachers in context flags', () => {
+    expect(deriveAuthRoleFlags('ATTENDANCE_OFFICER')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
 });
 
 describe('canViewAllClasses', () => {

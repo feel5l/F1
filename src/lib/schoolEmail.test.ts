@@ -17,4 +17,8 @@ describe('normalizeSchoolEmail', () => {
   it('returns empty string for blank input', () => {
     expect(normalizeSchoolEmail('   ')).toBe('');
   });
+
+  it('preserves internal spaces in username-only identifiers', () => {
+    expect(normalizeSchoolEmail('zayd 12345')).toBe(`zayd 12345@${SCHOOL_EMAIL_DOMAIN}`);
+  });
 });
