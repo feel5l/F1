@@ -17,4 +17,8 @@ describe('normalizeSchoolEmail', () => {
   it('returns empty string for blank input', () => {
     expect(normalizeSchoolEmail('   ')).toBe('');
   });
+
+  it('does not treat internal spaces as a full email (merged login UX)', () => {
+    expect(normalizeSchoolEmail('zayd 12345')).toBe(`zayd 12345@${SCHOOL_EMAIL_DOMAIN}`);
+  });
 });
