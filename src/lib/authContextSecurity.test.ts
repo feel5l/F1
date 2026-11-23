@@ -9,6 +9,8 @@ describe('AuthContext security regression (feat(auth) merge)', () => {
   it('does not grant admin from raw Firebase email bypasses', () => {
     expect(source).not.toMatch(/isAdmin\s*=.*user\?\.email/);
     expect(source).not.toMatch(/alzaem2002/);
+    expect(source).not.toMatch(/alzaem3000@gmail\.com/);
+    expect(source).not.toMatch(/BOOTSTRAP_ADMIN_EMAIL/);
     expect(source).not.toMatch(/zayd12345@ghiabi\.com/);
   });
 

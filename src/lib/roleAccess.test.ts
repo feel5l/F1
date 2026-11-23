@@ -10,6 +10,14 @@ import {
 } from './roleAccess';
 
 describe('deriveAuthRoleFlags', () => {
+  it('marks ADMIN as admin only', () => {
+    expect(deriveAuthRoleFlags('ADMIN')).toEqual({
+      isAdmin: true,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
+
   it('marks TEACHER_LEADER as teacher but not admin', () => {
     expect(deriveAuthRoleFlags('TEACHER_LEADER')).toEqual({
       isAdmin: false,
@@ -23,6 +31,14 @@ describe('deriveAuthRoleFlags', () => {
       isAdmin: false,
       isTeacher: false,
       isSupervisor: true,
+    });
+  });
+
+  it('does not treat ATTENDANCE_OFFICER as teacher or admin (class scope uses appRole)', () => {
+    expect(deriveAuthRoleFlags('ATTENDANCE_OFFICER')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: false,
     });
   });
 });

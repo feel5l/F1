@@ -18,6 +18,12 @@ describe('Login.tsx auth wiring', () => {
     expect(source).toMatch(/getRedirectResult/);
   });
 
+  it('falls back to signInWithRedirect when popup auth is blocked (feat(auth) merge)', () => {
+    expect(source).toMatch(/signInWithPopup\(auth, provider\)/);
+    expect(source).toMatch(/shouldFallbackToGoogleRedirect\(error\?\.code\)/);
+    expect(source).toMatch(/await signInWithRedirect\(auth, provider\)/);
+  });
+
   it('keeps password-reset controls out of the login form submit path (merged PR #2)', () => {
     expect(source).toMatch(/const handleResetPassword = async/);
     expect(source).toMatch(/resolvePasswordResetEmail\(resetEmail\)/);
