@@ -25,6 +25,22 @@ describe('deriveAuthRoleFlags', () => {
       isSupervisor: true,
     });
   });
+
+  it('does not treat ATTENDANCE_OFFICER as teacher (class scope uses canViewAllClasses)', () => {
+    expect(deriveAuthRoleFlags('ATTENDANCE_OFFICER')).toEqual({
+      isAdmin: false,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
+
+  it('marks ADMIN only as admin', () => {
+    expect(deriveAuthRoleFlags('ADMIN')).toEqual({
+      isAdmin: true,
+      isTeacher: false,
+      isSupervisor: false,
+    });
+  });
 });
 
 describe('canViewAllClasses', () => {

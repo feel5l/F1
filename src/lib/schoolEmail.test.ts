@@ -17,4 +17,12 @@ describe('normalizeSchoolEmail', () => {
   it('returns empty string for blank input', () => {
     expect(normalizeSchoolEmail('   ')).toBe('');
   });
+
+  it('preserves internal spaces in username-only identifiers', () => {
+    expect(normalizeSchoolEmail('zayd 12345')).toBe(`zayd 12345@${SCHOOL_EMAIL_DOMAIN}`);
+  });
+
+  it('normalizes username with leading internal segment after trim', () => {
+    expect(normalizeSchoolEmail('  zayd12345  ')).toBe(`zayd12345@${SCHOOL_EMAIL_DOMAIN}`);
+  });
 });
