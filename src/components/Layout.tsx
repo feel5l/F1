@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { getRoleLabel, isRoleAllowedForNav, resolveEffectiveRole } from '../lib/roleAccess';
 import { auth } from '../lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,22 +40,11 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'التقارير', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'SUPERVISOR', 'TEACHER_LEADER'] },
   ];
 
-  const currentRole = staffMember?.appRole || (isAdmin ? 'ADMIN' : 'TEACHER');
+  const currentRole = resolveEffectiveRole(staffMember?.appRole, isAdmin);
 
-  const visibleNavItems = navItems.filter(item => 
-    item.roles.includes(currentRole as any)
+  const visibleNavItems = navItems.filter((item) =>
+    isRoleAllowedForNav(currentRole, item.roles)
   );
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'مدير نظام';
-      case 'TEACHER': return 'معلم';
-      case 'TEACHER_LEADER': return 'رائد نشاط / رئيس قسم';
-      case 'ATTENDANCE_OFFICER': return 'مسؤول غياب';
-      case 'SUPERVISOR': return 'مشرف';
-      default: return 'موظف';
-    }
-  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4 px-3">
