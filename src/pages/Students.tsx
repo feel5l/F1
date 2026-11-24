@@ -13,6 +13,7 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -161,25 +162,23 @@ export default function Students() {
         try {
           const data = results.data as string[][];
           // Skip header if exists (simple check if first row contains non-typical names)
-          const startIndex = (data[0][0]?.includes('الاسم') || data[0][0]?.includes('Name')) ? 1 : 0;
-          
+          const startIndex = csvImportStartIndex(data[0]?.[0]);
+          const selectedClass = classes.find(c => c.id === importClassId);
+
           let count = 0;
           for (let i = startIndex; i < data.length; i++) {
-            const row = data[i];
-            const name = row[0]?.trim();
-            if (name) {
-              const selectedClass = classes.find(c => c.id === importClassId);
-              await addDoc(collection(db, 'students'), {
-                fullName: name,
-                classId: importClassId,
-                className: selectedClass?.name || '',
-                guardianName: row[1]?.trim() || '',
-                guardianPhone: row[2]?.trim() || '',
-                parentEmail: row[3]?.trim() || '',
-                isActive: true,
-              });
-              count++;
-            }
+            const parsed = parseStudentImportRow(data[i]);
+            if (!parsed) continue;
+            await addDoc(collection(db, 'students'), {
+              fullName: parsed.fullName,
+              classId: importClassId,
+              className: selectedClass?.name || '',
+              guardianName: parsed.guardianName,
+              guardianPhone: parsed.guardianPhone,
+              parentEmail: parsed.parentEmail,
+              isActive: true,
+            });
+            count++;
           }
           
           toast.success(`تم استيراد ${count} طالباً بنجاح`);
