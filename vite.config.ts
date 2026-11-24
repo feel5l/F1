@@ -10,6 +10,10 @@ export default defineConfig(() => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+  },
   server: {
     // HMR is disabled in AI Studio via DISABLE_HMR env var.
     // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
