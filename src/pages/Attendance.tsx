@@ -14,6 +14,7 @@ import { Class, Student, AttendanceStatus } from '../types';
 import { canViewAllClasses } from '../lib/roleAccess';
 import { filterClassesForUser } from '../lib/classAccess';
 import { countAttendanceStatuses } from '../lib/attendanceStats';
+import { canSubmitAttendanceSession } from '../lib/attendanceSubmit';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 
 export default function Attendance() {
@@ -72,7 +73,7 @@ export default function Attendance() {
   };
 
   const submitAttendance = async () => {
-    if (!selectedClass || !subject || !user?.email) {
+    if (!canSubmitAttendanceSession(selectedClass, subject, user?.email)) {
       toast.error('يرجى ملء كافة البيانات');
       return;
     }
