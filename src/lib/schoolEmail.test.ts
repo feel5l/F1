@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeSchoolEmail, SCHOOL_EMAIL_DOMAIN } from './schoolEmail';
+import { canRequestPasswordReset, normalizeSchoolEmail, SCHOOL_EMAIL_DOMAIN } from './schoolEmail';
 
 describe('normalizeSchoolEmail', () => {
   it('appends school domain for username-only identifiers', () => {
@@ -16,5 +16,12 @@ describe('normalizeSchoolEmail', () => {
 
   it('returns empty string for blank input', () => {
     expect(normalizeSchoolEmail('   ')).toBe('');
+  });
+});
+
+describe('canRequestPasswordReset', () => {
+  it('requires a non-empty normalized identifier', () => {
+    expect(canRequestPasswordReset('zayd12345')).toBe(true);
+    expect(canRequestPasswordReset('   ')).toBe(false);
   });
 });

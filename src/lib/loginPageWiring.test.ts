@@ -9,6 +9,7 @@ describe('Login.tsx wiring (auth merge regressions)', () => {
     expect(login).toMatch(/normalizeSchoolEmail/);
     expect(login).toMatch(/signInWithEmailAndPassword\(auth, loginIdentifier/);
     expect(login).toMatch(/sendPasswordResetEmail\(auth, fullEmail\)/);
+    expect(login).toMatch(/canRequestPasswordReset/);
   });
 
   it('uses shouldFallbackToGoogleRedirect for popup → redirect fallback', () => {
