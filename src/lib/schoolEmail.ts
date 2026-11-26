@@ -11,3 +11,7 @@ export function normalizeSchoolEmail(identifier: string): string {
   }
   return trimmed.includes('@') ? trimmed : `${trimmed}@${SCHOOL_EMAIL_DOMAIN}`;
 }
+
+export function canRequestPasswordReset(identifier: string): boolean {
+  return normalizeSchoolEmail(identifier).length > 0;
+}

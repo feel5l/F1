@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { School, KeyRound } from 'lucide-react';
-import { normalizeSchoolEmail } from '../lib/schoolEmail';
+import { canRequestPasswordReset, normalizeSchoolEmail } from '../lib/schoolEmail';
 import { shouldFallbackToGoogleRedirect } from '../lib/googleAuth';
 import {
   Dialog,
@@ -77,12 +77,11 @@ export default function Login() {
   };
 
   const handleResetPassword = async () => {
-    const fullEmail = normalizeSchoolEmail(resetEmail);
-
-    if (!fullEmail) {
+    if (!canRequestPasswordReset(resetEmail)) {
       toast.error('يرجى إدخال البريد الإلكتروني');
       return;
     }
+    const fullEmail = normalizeSchoolEmail(resetEmail);
     
     setResetLoading(true);
     try {
