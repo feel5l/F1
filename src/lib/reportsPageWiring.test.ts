@@ -8,4 +8,9 @@ describe('Reports.tsx wiring', () => {
   it('uses computeReportsDisciplineRate for summary rate', () => {
     expect(source).toMatch(/computeReportsDisciplineRate/);
   });
+
+  it('filters logs by shared date-range helper and class access helper', () => {
+    expect(source).toMatch(/filterLogsByReportsDateRange/);
+    expect(source).toMatch(/filterClassesForUser/);
+  });
 });

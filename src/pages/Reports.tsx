@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format } from 'date-fns';
+import { filterLogsByReportsDateRange } from '../lib/reportsLogDateFilter';
+import { filterClassesForUser } from '../lib/classAccess';
+import { canViewAllClasses } from '../lib/roleAccess';
 import { ar } from 'date-fns/locale';
 import {
   LineChart,
@@ -37,7 +40,7 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
 };
 
 export default function Reports() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, staffMember } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -61,17 +64,14 @@ export default function Reports() {
         const classSnap = await getDocs(collection(db, 'classes'));
         const classList = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
         
-        if (isAdmin) {
-          setClasses(classList);
-        } else {
-          setClasses(classList.filter(c => c.teacherEmail === user?.email));
-        }
+        const canViewAll = canViewAllClasses(isAdmin, staffMember?.appRole);
+        setClasses(filterClassesForUser(classList, canViewAll, user?.email));
       } catch (err) {
         console.error(err);
       }
     };
     if (user) fetchInitialData();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, staffMember?.appRole]);
 
   useEffect(() => {
     if (selectedClass === 'all') {
@@ -111,18 +111,7 @@ export default function Reports() {
       const snap = await getDocs(q);
       let logsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AttendanceLog));
 
-      // Filter by Date Range (client-side for simplicity since we want relative ranges)
-      const now = new Date();
-      if (dateRange === 'today') {
-        const start = startOfDay(now);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      } else if (dateRange === 'week') {
-        const start = subDays(now, 7);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      } else if (dateRange === 'month') {
-        const start = startOfMonth(now);
-        logsData = logsData.filter(l => l.timestamp.toDate() >= start);
-      }
+      logsData = filterLogsByReportsDateRange(logsData, dateRange);
 
       setLogs(logsData);
 

@@ -13,6 +13,7 @@ import { Student, Class } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
+import { isStudentFormComplete } from '../lib/studentFormValidation';
 import { csvImportStartIndex, parseStudentImportRow } from '../lib/studentImport';
 import { filterStudents } from '../lib/studentListFilter';
 
@@ -113,7 +114,7 @@ export default function Students() {
   };
 
   const handleSave = async () => {
-    if (!formData.fullName || !formData.classId) {
+    if (!isStudentFormComplete(formData.fullName, formData.classId)) {
       toast.error('يرجى إكمال البيانات الأساسية');
       return;
     }

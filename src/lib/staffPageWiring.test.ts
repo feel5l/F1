@@ -13,4 +13,8 @@ describe('Staff.tsx wiring', () => {
     expect(source).toMatch(/doc\(db, 'roles', editingMember\.email\)/);
     expect(source).toMatch(/setDoc\(roleRef/);
   });
+
+  it('guards role update with canUpdateStaffRole', () => {
+    expect(source).toMatch(/canUpdateStaffRole/);
+  });
 });

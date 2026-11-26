@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { filterStaffList } from '../lib/staffListFilter';
 import { getRoleLabel } from '../lib/roleAccess';
+import { canUpdateStaffRole } from '../lib/staffRoleUpdate';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -61,7 +62,7 @@ export default function Staff() {
   };
 
   const handleUpdateRole = async () => {
-    if (!editingMember || !newRole) return;
+    if (!canUpdateStaffRole(editingMember, newRole)) return;
     
     try {
       const memberRef = doc(db, 'staff', editingMember.id!);
