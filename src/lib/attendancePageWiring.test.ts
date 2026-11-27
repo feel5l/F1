@@ -8,4 +8,13 @@ describe('Attendance.tsx wiring (submit validation)', () => {
   it('uses canSubmitAttendanceSession before writing attendance logs', () => {
     expect(attendance).toMatch(/canSubmitAttendanceSession/);
   });
+
+  it('scopes class list with canViewAllClasses and staff appRole', () => {
+    expect(attendance).toMatch(/canViewAllClasses\(isAdmin, staffMember\?\.appRole\)/);
+    expect(attendance).toMatch(/filterClassesForUser/);
+  });
+
+  it('refetches classes when staff appRole changes (role affects canViewAll)', () => {
+    expect(attendance).toMatch(/\}, \[user, isAdmin, staffMember\?\.appRole\]\)/);
+  });
 });

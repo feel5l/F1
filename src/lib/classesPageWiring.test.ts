@@ -9,4 +9,8 @@ describe('Classes.tsx wiring', () => {
     expect(source).toMatch(/handleFirestoreError\(err, OperationType\.UPDATE, 'classes'\)/);
     expect(source).toMatch(/handleFirestoreError\(err, OperationType\.DELETE, 'classes'\)/);
   });
+
+  it('sorts fetched classes with sortClassesByArabicName', () => {
+    expect(source).toMatch(/sortClassesByArabicName/);
+  });
 });

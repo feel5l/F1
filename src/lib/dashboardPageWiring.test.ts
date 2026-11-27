@@ -8,4 +8,9 @@ describe('Dashboard.tsx wiring', () => {
   it('uses computeDashboardAttendanceRate for today KPI', () => {
     expect(source).toMatch(/computeDashboardAttendanceRate/);
   });
+
+  it('scopes non-admin student counts and logs to the signed-in teacher', () => {
+    expect(source).toMatch(/where\('teacherEmail', '==', user\?\.email\)/);
+    expect(source).toMatch(/!isAdmin && user\?\.email/);
+  });
 });

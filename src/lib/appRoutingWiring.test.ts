@@ -14,4 +14,18 @@ describe('App.tsx routing (unauthenticated redirect)', () => {
     expect(app).toMatch(/Navigate to="\/login"/);
     expect(app).toMatch(/user \?/);
   });
+
+  /** Must stay aligned with e2e/smoke_test.py protected route checks. */
+  const smokeProtectedRoutes = [
+    '/attendance',
+    '/students',
+    '/classes',
+    '/staff',
+    '/logs',
+    '/reports',
+  ];
+
+  it.each(smokeProtectedRoutes)('registers smoke-tested protected path %s', (route) => {
+    expect(app).toContain(`path="${route}"`);
+  });
 });
