@@ -36,7 +36,7 @@ export default function Attendance() {
       setClasses(filterClassesForUser(list, canViewAll, user?.email));
     };
     if (user) fetchClasses();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, staffMember?.appRole]);
 
   useEffect(() => {
     if (!selectedClass) return;
