@@ -27,6 +27,9 @@ import {
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { filterStaffList } from '../lib/staffListFilter';
+import { getRoleLabel } from '../lib/roleAccess';
+import { canUpdateStaffRole } from '../lib/staffRoleUpdate';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -59,7 +62,7 @@ export default function Staff() {
   };
 
   const handleUpdateRole = async () => {
-    if (!editingMember || !newRole) return;
+    if (!canUpdateStaffRole(editingMember, newRole)) return;
     
     try {
       const memberRef = doc(db, 'staff', editingMember.id!);
@@ -85,19 +88,16 @@ export default function Staff() {
     }
   };
 
-  const filteredStaff = staff.filter(member =>
-    member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (member.role || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.nationalId.includes(searchTerm)
-  );
+  const filteredStaff = filterStaffList(staff, searchTerm);
 
   const getRoleBadge = (role?: AppRole) => {
+    const label = getRoleLabel(role ?? '');
     switch (role) {
-      case 'ADMIN': return <Badge className="bg-red-100 text-red-800 border-red-200">مدير نظام</Badge>;
-      case 'TEACHER': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">معلم</Badge>;
-      case 'TEACHER_LEADER': return <Badge className="bg-purple-100 text-purple-800 border-purple-200">رائد نشاط</Badge>;
-      case 'ATTENDANCE_OFFICER': return <Badge className="bg-green-100 text-green-800 border-green-200">مسؤول غياب</Badge>;
-      case 'SUPERVISOR': return <Badge className="bg-amber-100 text-amber-800 border-amber-200">مشرف</Badge>;
+      case 'ADMIN': return <Badge className="bg-red-100 text-red-800 border-red-200">{label}</Badge>;
+      case 'TEACHER': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">{label}</Badge>;
+      case 'TEACHER_LEADER': return <Badge className="bg-purple-100 text-purple-800 border-purple-200">{label}</Badge>;
+      case 'ATTENDANCE_OFFICER': return <Badge className="bg-green-100 text-green-800 border-green-200">{label}</Badge>;
+      case 'SUPERVISOR': return <Badge className="bg-amber-100 text-amber-800 border-amber-200">{label}</Badge>;
       default: return <Badge variant="outline">غير محدد</Badge>;
     }
   };
