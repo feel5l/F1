@@ -14,4 +14,9 @@ describe('App.tsx routing (unauthenticated redirect)', () => {
     expect(app).toMatch(/Navigate to="\/login"/);
     expect(app).toMatch(/user \?/);
   });
+
+  it('renders nothing while auth is loading (avoids flash before /login redirect)', () => {
+    expect(app).toMatch(/if \(loading\) return null/);
+    expect(app).toMatch(/useAuth\(\)/);
+  });
 });

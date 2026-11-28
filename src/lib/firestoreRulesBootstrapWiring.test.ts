@@ -13,4 +13,12 @@ describe('Firestore rules admin bootstrap parity', () => {
     expect(authContext).toMatch(/shouldBootstrapAdminRole/);
     expect(rules).toMatch(/isBootstrapAdminEmail/);
   });
+
+  it('restricts bootstrap role create to self ADMIN with role-only payload', () => {
+    expect(rules).toMatch(/match \/roles\/\{roleEmail\}/);
+    expect(rules).toMatch(/isBootstrapAdminEmail\(\)/);
+    expect(rules).toMatch(/roleEmail == request\.auth\.token\.email/);
+    expect(rules).toMatch(/incoming\(\)\.keys\(\)\.hasOnly\(\['role'\]\)/);
+    expect(rules).toMatch(/incoming\(\)\.role == 'ADMIN'/);
+  });
 });
