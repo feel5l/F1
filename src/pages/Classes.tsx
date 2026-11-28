@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Class, StaffMember } from '../types';
+import { sortClassesByArabicName } from '../lib/classListSort';
 import { Edit2, Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -36,8 +37,7 @@ export default function Classes() {
     try {
       const classSnap = await getDocs(collection(db, 'classes'));
       const list = classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
-      list.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
-      setClasses(list);
+      setClasses(sortClassesByArabicName(list));
 
       const staffSnap = await getDocs(query(collection(db, 'staff'), orderBy('fullName')));
       const staffList = staffSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as StaffMember));
